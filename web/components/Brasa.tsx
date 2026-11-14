@@ -603,7 +603,7 @@ export default function Brasa() {
               <div><dt>Focos vistos por dos satélites</dt><dd>{ultimaLib.focos}</dd></div>
               <div><dt>Firmas de oráculos</dt><dd>2 de 2</dd></div>
               <div>
-                <dt>A Cuarteles de bomberos</dt>
+                <dt>A cuarteles de bomberos</dt>
                 <dd className="mas">+ {(ultimaLib.cuartelesUsdc ?? (ultimaLib.liberadoUsdc * (pz.combate + pz.logistica)) / 100).toLocaleString("es-AR", { maximumFractionDigits: 2 })} USDC</dd>
               </div>
               <div>
@@ -1324,7 +1324,7 @@ export default function Brasa() {
           <li>
             <b>El dinero no pasa por brasa:</b> el fondo paga solo, según la regla pública, a destinatarios
             verificados (hoy por el equipo; en el piloto, por la federación de bomberos). La plataforma no es mandataria ni depositaria. Cada
-            Cuartel o damnificado decide cómo usa lo que recibe.
+            cuartel o damnificado decide cómo usa lo que recibe.
           </li>
           <li>
             <b>La detección es una estimación</b> de satélite, con unas 3 horas de demora. No es un parte oficial ni un seguro.

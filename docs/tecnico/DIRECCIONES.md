@@ -39,6 +39,8 @@ Ningún rol puede retirar el fondo. Hoy, en Fuji, los roles los opera el equipo.
 ## Transacciones clave
 | Qué | Transacción |
 |---|---|
+| Donación de 0,01 USDC, la mínima (v3) | [`0x841e…c39c`](https://build.avax.network/explorer/fuji/c-chain/tx/0x841e41303da62b7e79fcdf7708f7814f959317793fea60efca9b4a80785ac39c) |
+| Donación de 9,9 USDC (v3) | [`0x0971…b7fb`](https://build.avax.network/explorer/fuji/c-chain/tx/0x09713d3061570eebd4e625d69135bfab799a2f54bafffaf2102f696ce132b7fb) |
 | Liberación en vivo del 12/11 (v2), 9,5 USDC | [`0xd35e…d4a3`](https://build.avax.network/explorer/fuji/c-chain/tx/0xd35e6748a10d21081a05998893f4b3d8d2f42d2d89d438bcd22944d7edded4a3) |
 | Donación de prueba (v2) | [`0x2cda…3ee0`](https://build.avax.network/explorer/fuji/c-chain/tx/0x2cda1aee638693a4665d4443412fe7335e6c34dc83feeb482338f1e318bd3ee0) |
 | Primera liberación (v1, con datos guardados) | [`0x67f7…aba0`](https://build.avax.network/explorer/fuji/c-chain/tx/0x67f79d0eb1bb808dc12c873374e7f906ba7bb94aed1212d71b51c87c836caba0) |

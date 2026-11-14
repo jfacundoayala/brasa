@@ -7,6 +7,7 @@ Todo lo que hace falta para entender brasa, comprobarlo y ver hacia dónde va.
 | Necesitás… | Leé |
 |---|---|
 | Entender brasa en 2 minutos | [`entrega/ONE-PAGER.md`](entrega/ONE-PAGER.md) y el deck en [`presentacion/`](presentacion/) |
+| Recorrer la demo y ver las respuestas a las preguntas difíciles | [`DEMO.md`](DEMO.md) |
 | Ver cómo validamos el problema con bomberos | [`producto/VALIDACION-BOMBEROS.md`](producto/VALIDACION-BOMBEROS.md) |
 | Saber de dónde sale cada número | [`producto/FORMULA-BRASA.md`](producto/FORMULA-BRASA.md) y [`producto/DATOS-REALES-SALTA.md`](producto/DATOS-REALES-SALTA.md) |
 | Saber cómo se separa un incendio de otro foco de calor | [`producto/FOCOS-QUE-NO-SON-INCENDIOS.md`](producto/FOCOS-QUE-NO-SON-INCENDIOS.md) |
