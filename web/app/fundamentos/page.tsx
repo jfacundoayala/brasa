@@ -296,7 +296,7 @@ export default function Fundamentos() {
         <ul>
           <li>
             <b>USDC</b> es un dólar digital de la empresa Circle: 1 USDC vale 1 dólar. El fondo recibe y paga siempre en USDC, así el
-            Cuartel o el damnificado sabe exacto cuánto recibe.
+            cuartel o el damnificado sabe exacto cuánto recibe.
           </li>
           <li>
             <b>AVAX</b> es la moneda propia de Avalanche. Si tenés AVAX, lo cambiás a USDC desde tu billetera (Core o LFJ) y después

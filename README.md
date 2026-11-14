@@ -8,15 +8,15 @@
 
 ## Links
 
-| | |
-|---|---|
-| **Web** | [brasafund.vercel.app](https://brasafund.vercel.app): mapa de incendios, el fondo y cómo donar |
-| **Video** | [youtu.be/Kv2nUGe9D3A](https://youtu.be/Kv2nUGe9D3A) |
-| **Pago en vivo** | [Comprobante del 12/11/2026](https://build.avax.network/explorer/fuji/c-chain/tx/0xd35e6748a10d21081a05998893f4b3d8d2f42d2d89d438bcd22944d7edded4a3): 10 focos confirmados, 9,5 USDC a dos cuarteles y a familias damnificadas |
-| **Contrato** | [`BrasaFund` en Fuji](https://build.avax.network/explorer/fuji/c-chain/address/0x96b950d62Cae3eE39c5325144c78d0CBDA9d6057), código [verificado en Sourcify](https://sourcify.dev/server/repo-ui/43113/0x96b950d62Cae3eE39c5325144c78d0CBDA9d6057) |
-| **Validación** | [Entrevista al Comandante Mayor del Cuartel de Bomberos Voluntarios de Salta](docs/producto/VALIDACION-BOMBEROS.md) |
-| **Presentación** | [Deck](docs/presentacion/brasa-deck.pdf) · [Resumen en una página](docs/presentacion/one-pager.pdf) |
-| **Documentación** | [Índice](docs/README.md) |
+- **Web:** [brasafund.vercel.app](https://brasafund.vercel.app), con el mapa de incendios, el fondo y cómo donar.
+- **Video:** [youtu.be/Kv2nUGe9D3A](https://youtu.be/Kv2nUGe9D3A).
+- **Pago en vivo:** [comprobante del 12/11/2026](https://build.avax.network/explorer/fuji/c-chain/tx/0xd35e6748a10d21081a05998893f4b3d8d2f42d2d89d438bcd22944d7edded4a3). 10 focos confirmados y 9,5 USDC a dos cuarteles y a familias damnificadas.
+- **Contrato:** [`BrasaFund` en Fuji](https://build.avax.network/explorer/fuji/c-chain/address/0x96b950d62Cae3eE39c5325144c78d0CBDA9d6057), con el código [verificado en Sourcify](https://sourcify.dev/server/repo-ui/43113/0x96b950d62Cae3eE39c5325144c78d0CBDA9d6057).
+- **Transacciones:** todas las de la demo, en [`DIRECCIONES.md`](docs/tecnico/DIRECCIONES.md).
+- **Validación:** [entrevista al Comandante Mayor del Cuartel de Bomberos Voluntarios de Salta](docs/producto/VALIDACION-BOMBEROS.md).
+- **Demo guiada y preguntas difíciles:** [`DEMO.md`](docs/DEMO.md).
+- **Presentación:** [deck](docs/presentacion/brasa-deck.pdf) y [resumen en una página](docs/presentacion/one-pager.pdf).
+- **Documentación:** [índice](docs/README.md).
 
 ## Qué hace
 
