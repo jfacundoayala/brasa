@@ -1,0 +1,3 @@
+# m h dom mon dow  comando   (cada 3 horas, minuto 7; FIRMS demora ~3 h)
+# La VM solo baja datos y reinicia la web. NO lleva claves de oraculo (ver docs/futuro/ORACLE-PASO-A-PASO.md).
+7 */3 * * * set -a; . /home/ubuntu/relayer.env; set +a; cd /home/ubuntu/brasa/relayer && /usr/bin/node src/index.mjs preparar --live >> /home/ubuntu/relayer.log 2>&1 && /usr/bin/pm2 restart brasa-web >> /home/ubuntu/relayer.log 2>&1

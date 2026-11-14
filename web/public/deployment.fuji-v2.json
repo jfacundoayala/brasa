@@ -1,0 +1,16 @@
+{
+  "network": "fuji",
+  "chainId": 43113,
+  "rpc": "https://api.avax-test.network/ext/bc/C/rpc",
+  "explorer": "https://explorer-test.avax.network/c-chain",
+  "fund": "0xAABcd03bCfEE730633E1Fd69756E1923Db50c72f",
+  "usdc": "0x5425890298aed601595a70AB815c96711a31Bc65",
+  "zoneId": "0x73616c7461000000000000000000000000000000000000000000000000000000",
+  "zoneName": "Salta",
+  "feeBps": 500,
+  "version": 2,
+  "deployBlock": 60937483,
+  "polygonHash": "0xf75308a1b854e187072425bcc0c8017bd053462a134b4d16da2fcdd569e27888",
+  "federation": "0xF0862456a666CE6fF13112EFd6E489d0b6fc0052",
+  "recipientDelay": 600
+}

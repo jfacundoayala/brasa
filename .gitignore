@@ -1,0 +1,42 @@
+# secretos: NUNCA al repo
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+keystore*
+# dependencias y compilados
+node_modules/
+artifacts/
+cache/
+cache_hardhat/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+# sistema
+.DS_Store
+Thumbs.db
+# datos generados por el demo local
+web/public/ultimo-reporte.json
+
+# generado por el deploy / tipos generados
+web/public/deployment.json
+contracts/types/
+
+# Firmas de oraculo y despliegue local (no se suben)
+firma-oraculo*.json
+deployment.json
+
+# Entrevistas reales (datos personales): nunca al repo
+docs/entrevistas/
+
+# Locales: herramientas y salidas del buzón
+.claude-flow/
+datos-reportes/
+
+# Herramientas locales
+.claude/
+docs/equipo/
+docs/identidad/propuestas/

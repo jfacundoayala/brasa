@@ -1,0 +1,51 @@
+name: datos-nasa
+# Baja los focos de NASA FIRMS para Salta y actualiza web/public/focos.json.
+# Vercel vuelve a publicar la web sola cuando entra el commit.
+# Necesita el secreto MAP_KEY en el repo (Settings → Secrets and variables → Actions).
+# No usa claves de oráculo: solo baja datos, no firma ni envía nada a la cadena.
+# Se corre a mano (Actions → datos-nasa → Run workflow) cuando el secreto MAP_KEY está cargado.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datos-nasa
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bajar focos en vivo
+        working-directory: relayer
+        env:
+          MAP_KEY: ${{ secrets.MAP_KEY }}
+        run: |
+          npm ci
+          node src/index.mjs preparar --live
+      - name: Si NASA no trae focos de los dos satélites VIIRS, dejar los datos anteriores
+        run: |
+          # Se cuentan NOAA-20 y NOAA-21 (los que usa la meta); MODIS solo no alcanza.
+          n=$(node -e 'const c=JSON.parse(require("fs").readFileSync("web/public/focos.json","utf8")).conteo;console.log(Math.min(c.noaa20.total,c.noaa21.total))')
+          echo "Focos VIIRS en vivo (el menor de los dos satélites): $n"
+          if [ "$n" -eq 0 ]; then
+            echo "Sin focos VIIRS en las últimas horas: se mantienen los datos anteriores."
+            git checkout -- web/public/focos.json
+          fi
+      - name: Guardar si cambió
+        run: |
+          if git diff --quiet -- web/public/focos.json; then
+            echo "Sin cambios."
+            exit 0
+          fi
+          git config user.name "brasa-datos"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/public/focos.json
+          git commit -m "Datos: focos de NASA FIRMS en vivo"
+          git push

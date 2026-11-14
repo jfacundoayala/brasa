@@ -1,0 +1,54 @@
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  secretos-y-enlaces:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Buscar claves privadas y archivos .env en el repo
+        run: |
+          # Mismo criterio que .githooks/pre-commit, sobre todos los archivos del repo (no solo el último cambio).
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$'; then
+            echo "Hay un archivo .env en el repo"; exit 1
+          fi
+          if git grep -nIE "(PRIVATE_KEY[A-Z0-9_]* *[=:] *\"?(0x)?[0-9a-fA-F]{64}|-----BEGIN [A-Z ]*PRIVATE KEY-----)" -- . ":!*.lock" ":!**/package-lock.json"; then
+            echo "Parece haber una clave privada en el repo"; exit 1
+          fi
+          echo "Sin claves privadas ni .env en el repo."
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Links de la documentación
+        run: node .github/revisar-enlaces.mjs
+
+  probar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Contratos (compilar y probar)
+        working-directory: contracts
+        run: |
+          npm ci
+          npx hardhat compile
+          npx hardhat test
+      - name: Relayer
+        working-directory: relayer
+        run: |
+          npm ci
+          npm test
+      - name: Web (tipos y build)
+        working-directory: web
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm run build

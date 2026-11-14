@@ -1,0 +1,96 @@
+<!doctype html>
+<!--
+  Fuente de web/public/og-brasa.png (la imagen que aparece al compartir el link en WhatsApp, LinkedIn o X).
+  Para regenerarla, con la web instalada (usa la fuente local de web/node_modules):
+    chrome --headless=new --hide-scrollbars --window-size=1200,630 --screenshot=og-brasa.png docs/identidad/og/og-brasa.html
+-->
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<title>brasa · imagen para compartir</title>
+<style>
+  @font-face {
+    font-family: "Space Grotesk";
+    src: url("../../web/node_modules/@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2") format("woff2");
+    font-weight: 300 700;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    color: #fbf6ee;
+    background:
+      radial-gradient(760px 420px at 8% -10%, rgba(255, 106, 43, .30), transparent 62%),
+      radial-gradient(620px 420px at 100% 110%, rgba(255, 176, 0, .14), transparent 60%),
+      #14110f;
+    position: relative;
+  }
+  /* Grilla tenue de "mapa satelital" */
+  body::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(900px 600px at 80% 50%, #000 30%, transparent 75%);
+  }
+  .marco { position: absolute; inset: 56px 64px; display: grid; grid-template-columns: 1fr 380px; gap: 48px; align-items: center; }
+  .logo { height: 64px; display: block; margin-bottom: 30px; }
+  h1 { font-size: 48px; line-height: 1.04; letter-spacing: -.03em; font-weight: 700; }
+  h1 em { font-style: normal; background: linear-gradient(180deg, #ffb000, #ff6a2b 75%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .bajada { margin-top: 22px; font-size: 24px; line-height: 1.35; color: #cfc3b8; max-width: 640px; font-weight: 400; }
+  .pie { position: absolute; left: 64px; right: 64px; bottom: 40px; display: flex; justify-content: space-between; align-items: center; font-size: 20px; color: #9b8e83; }
+  .pie b { color: #ff8a4c; font-weight: 600; }
+  .chip { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .04); color: #fbf6ee; font-size: 18px; }
+  .chip i { width: 10px; height: 10px; border-radius: 50%; background: #e84142; box-shadow: 0 0 0 4px rgba(232, 65, 66, .25); }
+
+  /* Tarjeta de la meta, como en la web */
+  .meta {
+    border-radius: 24px; padding: 28px; transform: rotate(-2deg);
+    border: 1px solid rgba(255, 138, 76, .3);
+    background: linear-gradient(165deg, rgba(255, 106, 43, .14), rgba(255, 255, 255, .02) 50%), #1a1512;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .55), 0 1px 0 rgba(255, 255, 255, .06) inset;
+  }
+  .meta small { display: block; font-size: 17px; color: #cfc3b8; font-weight: 600; }
+  .meta .num { margin-top: 10px; font-size: 54px; font-weight: 700; color: #ff8a4c; line-height: 1; letter-spacing: -.02em; }
+  .meta .num span { font-size: 20px; color: #cfc3b8; font-weight: 500; letter-spacing: 0; }
+  .meta small.ej { margin-top: 8px; font-size: 15px; color: #9b8e83; font-weight: 500; }
+  .barra { margin-top: 18px; height: 14px; border-radius: 999px; background: #3a2e27; overflow: hidden; }
+  .barra i { display: block; width: 62%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ff6a2b, #ff8a4c); }
+  .pasos { margin-top: 22px; display: grid; gap: 10px; }
+  .paso { display: flex; align-items: center; gap: 12px; font-size: 18px; color: #fbf6ee; }
+  .paso b { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 14px; color: #ff8a4c; background: rgba(255, 106, 43, .12); border: 1px solid rgba(255, 138, 76, .3); }
+</style>
+</head>
+<body>
+  <div class="marco">
+    <div>
+      <svg class="logo" viewBox="0 0 420 120" role="img" aria-label="Brasa">
+        <g transform="translate(10,8) scale(1.04)">
+          <path d="M53 4 C53 21 77 30 78 55 C79 75 66 90 50 90 C34 90 21 77 22 59 C23 47 30 40 35 30 C37 38 41 42 46 42 C43 29 46 14 53 4 Z" fill="#FF5A1F"/>
+          <path d="M51 42 C55 53 66 58 66 71 C66 81 59 88 50 88 C41 88 34 81 34 72 C34 64 38 60 42 55 C43 60 46 63 48 63 C47 56 48 49 51 42 Z" fill="#FFB000"/><path d="M50 66 C53 71 58 73 58 79 C58 84 54.5 87 50 87 C45.5 87 42 84 42 79.5 C42 76 44 74 46 71.5 C46.5 74 48 75 49 75 C48.5 72 49 69 50 66 Z" fill="#FFE08A"/>
+          <g transform="translate(91,17) rotate(45) scale(1.3)"><rect x="-4.5" y="-4.5" width="9" height="9" rx="1.8" fill="#FFB000"/><rect x="-16" y="-3.4" width="4.3" height="6.8" rx="1" fill="#FFB000"/><rect x="-10.8" y="-3.4" width="4.3" height="6.8" rx="1" fill="#FFB000"/><rect x="6.5" y="-3.4" width="4.3" height="6.8" rx="1" fill="#FFB000"/><rect x="11.7" y="-3.4" width="4.3" height="6.8" rx="1" fill="#FFB000"/><rect x="-7" y="-0.8" width="14" height="1.6" fill="#FFB000"/><circle cx="0" cy="6.6" r="1.7" fill="#FFB000"/></g><path d="M84.7 31.7 A16 16 0 0 1 76.3 23.3" fill="none" stroke="#FFB000" stroke-width="2.4" stroke-linecap="round"/><path d="M82.0 38.2 A23 23 0 0 1 69.8 26.0" fill="none" stroke="#FFB000" stroke-width="2.4" stroke-linecap="round" opacity="0.65"/>
+        </g>
+        <text x="139" y="82" font-family="'Space Grotesk','Segoe UI',Arial,sans-serif" font-size="68" font-weight="700" fill="#FBF6EE" letter-spacing="-2">brasa</text>
+      </svg>
+      <h1>Cuando los satélites confirman el fuego, <em>la ayuda llega directo a bomberos y damnificados.</em></h1>
+      <p class="bajada">Un fondo con reglas públicas en Avalanche. Cada donación y cada pago, a la vista de todos.</p>
+    </div>
+    <div class="meta" aria-hidden="true">
+      <small>La meta para combatir el fuego</small>
+      <div class="num">62.720 <span>USDC</span></div>
+      <small class="ej">Ejemplo: 14 focos confirmados = 196 ha</small>
+      <div class="barra"><i></i></div>
+      <div class="pasos">
+        <div class="paso"><b>01</b> Dos satélites de la NASA lo ven</div>
+        <div class="paso"><b>02</b> Una regla pública fija la meta</div>
+        <div class="paso"><b>03</b> Paga directo, sin intermediarios</div>
+      </div>
+    </div>
+  </div>
+  <div class="pie">
+    <span><b>Ayuda a tiempo, recursos a la vista.</b> · brasafund.vercel.app</span>
+    <span class="chip"><i></i> Piloto en Salta · Avalanche Fuji</span>
+  </div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "brasa-relayer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "preparar": "node src/index.mjs preparar",
+    "reportar": "node src/index.mjs reportar",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "dependencies": {
+    "ethers": "6.17.0"
+  }
+}

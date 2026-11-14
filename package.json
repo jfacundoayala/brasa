@@ -1,0 +1,16 @@
+{
+  "name": "brasa",
+  "private": true,
+  "description": "Atajos para correr todo desde la raíz. Cada carpeta (contracts, relayer, web) tiene sus propias dependencias.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "instalar": "npm ci --prefix contracts && npm ci --prefix relayer && npm ci --prefix web",
+    "test": "npm test --prefix contracts && npm test --prefix relayer",
+    "test:contracts": "npm test --prefix contracts",
+    "test:relayer": "npm test --prefix relayer",
+    "build:web": "npm run build --prefix web",
+    "enlaces": "node .github/revisar-enlaces.mjs"
+  }
+}

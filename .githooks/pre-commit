@@ -1,0 +1,10 @@
+#!/bin/sh
+# Frena el commit si aparece una clave privada o un archivo .env.
+# Activar una vez:  git config core.hooksPath .githooks
+if git diff --cached --name-only | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$' >/dev/null; then
+  echo "BLOQUEADO: estás por commitear un archivo .env. Sacalo con: git reset <archivo>"; exit 1
+fi
+if git diff --cached -U0 | grep -E '^\+' | grep -E '(PRIVATE_KEY[A-Z0-9_]* *[=:] *"?(0x)?[0-9a-fA-F]{64}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' >/dev/null; then
+  echo "BLOQUEADO: parece haber una clave privada en lo que vas a commitear. Revisá con: git diff --cached"; exit 1
+fi
+exit 0

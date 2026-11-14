@@ -1,0 +1,23 @@
+{
+  "_nota": "Liberaciones hechas por reportFire, por contrato. Las agrega solo el relayer (enviar) en Fuji; se pueden comprobar en el registro público con el hash.",
+  "0x014fFD4e42580Cb0a0C2336BaF24A2bfCA174764": [
+    {
+      "tx": "0x67f79d0eb1bb808dc12c873374e7f906ba7bb94aed1212d71b51c87c836caba0",
+      "eventId": 1,
+      "fecha": "2026-11-12T04:11:22Z",
+      "focos": 18,
+      "liberadoUsdc": 8.73
+    }
+  ],
+  "0xAABcd03bCfEE730633E1Fd69756E1923Db50c72f": [
+    {
+      "tx": "0xd35e6748a10d21081a05998893f4b3d8d2f42d2d89d438bcd22944d7edded4a3",
+      "eventId": 1,
+      "fecha": "2026-11-12T20:21:12Z",
+      "focos": 10,
+      "liberadoUsdc": 9.5,
+      "cuartelesUsdc": 8.075,
+      "asistenciaUsdc": 1.425
+    }
+  ]
+}

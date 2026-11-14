@@ -1,0 +1,26 @@
+{
+  "fuente": "NASA FIRMS (API de área, últimas 24 h)",
+  "huellas": {
+    "noaa20": {
+      "sensor": "VIIRS NOAA-20",
+      "archivo": "firms-viirs-noaa20-salta.csv",
+      "dataHash": "0xa6b95bc23614f51c4f99a67f9b450123d5110c7d65e5f2b25a79a9c7d65870b8",
+      "altaConfianza": 21,
+      "total": 119
+    },
+    "noaa21": {
+      "sensor": "VIIRS NOAA-21",
+      "archivo": "firms-viirs-noaa21-salta.csv",
+      "dataHash": "0x6f6a22c8c1f1867fc5657f8899c88a943e6b663441f98ccde24df5d114e5e6dc",
+      "altaConfianza": 11,
+      "total": 138
+    },
+    "modis": {
+      "sensor": "MODIS",
+      "archivo": "firms-modis-salta.csv",
+      "dataHash": "0x401446df8c3e877d423070552a2331e7cfaeca3cf1ce82836208da9e39213e1b",
+      "altaConfianza": 16,
+      "total": 41
+    }
+  }
+}

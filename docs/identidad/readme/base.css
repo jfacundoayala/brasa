@@ -1,0 +1,18 @@
+@font-face { font-family: "Space Grotesk"; src: url("../../web/node_modules/@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2") format("woff2"); font-weight: 300 700; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1280px; overflow: hidden; background: transparent; }
+body { font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif; color: #fbf6ee; }
+.lienzo { position: relative; width: 1280px; border-radius: 32px; overflow: hidden; border: 1px solid rgba(255,138,76,.18);
+  background: radial-gradient(820px 460px at 6% -12%, rgba(255,106,43,.30), transparent 62%), radial-gradient(680px 440px at 102% 112%, rgba(255,176,0,.13), transparent 60%), #14110f; }
+.lienzo.suave { background: radial-gradient(900px 380px at 50% -40%, rgba(255,106,43,.16), transparent 65%), #14110f; }
+.lienzo::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+  background-size: 48px 48px; -webkit-mask-image: radial-gradient(900px 600px at 80% 40%, #000 25%, transparent 75%); }
+.lienzo > * { position: relative; }
+em { font-style: normal; background: linear-gradient(180deg, #ffb000, #ff6a2b 78%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.chip { display: inline-flex; align-items: center; gap: 10px; padding: 9px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.045); font-size: 19px; font-weight: 500; white-space: nowrap; }
+.chip i { width: 10px; height: 10px; border-radius: 50%; background: #58d68d; box-shadow: 0 0 0 4px rgba(88,214,141,.22); }
+.tarjeta { border-radius: 24px; border: 1px solid rgba(255,138,76,.26); background: linear-gradient(165deg, rgba(255,106,43,.12), rgba(255,255,255,.02) 55%), #1a1512; }
+.sombra { box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.06) inset; }
+.ico { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: #241a15; border: 1px solid rgba(255,138,76,.32); }
+.ico svg { width: 30px; height: 30px; fill: none; stroke: #ff8a4c; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
