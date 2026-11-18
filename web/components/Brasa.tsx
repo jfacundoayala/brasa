@@ -10,9 +10,10 @@ import {
   confirmados,
   donar,
   errorCorto,
-  esCore,
+  type Billetera,
+  billeteras,
+  elegir,
   fmtUsdc,
-  getEth,
   loadZone,
   nivel,
   parseUsdc,
@@ -127,7 +128,8 @@ export default function Brasa() {
   const [account, setAccount] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [hasWallet, setHasWallet] = useState(true);
-  const [conCore, setConCore] = useState(false);
+  const [wallets, setWallets] = useState<Pick<Billetera, "id" | "nombre">[]>([]);
+  const [walletId, setWalletId] = useState<Billetera["id"] | null>(null);
   const [amount, setAmount] = useState("100");
   const [cubrir, setCubrir] = useState(false);
   const [reparto, setReparto] = useState<Reparto | null>(null);
@@ -220,11 +222,32 @@ export default function Brasa() {
   }, [dep, focos]);
   useEffect(refreshZone, [refreshZone]);
 
-  // Wallet: solo en el cliente
+  // Billeteras instaladas: solo en el cliente. Si alguna ya está abierta en este sitio, se sigue con esa.
   useEffect(() => {
-    const eth = getEth();
-    setHasWallet(!!eth);
-    setConCore(esCore());
+    const lista = billeteras();
+    setHasWallet(lista.length > 0);
+    setWallets(lista.map(({ id, nombre }) => ({ id, nombre })));
+    let vivo = true;
+    (async () => {
+      for (const b of lista) {
+        const a = (await b.provider.request({ method: "eth_accounts" }).catch(() => [])) as string[];
+        if (!vivo) return;
+        if (a?.[0]) {
+          elegir(b.id);
+          setWalletId(b.id);
+          return;
+        }
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  // Cuenta y red de la billetera elegida
+  useEffect(() => {
+    if (!walletId) return;
+    const eth = elegir(walletId);
     if (!eth) return;
     const onAcc = (a: string[]) => setAccount(a[0] ?? null);
     const onChain = (c: string) => setChainId(parseInt(c, 16));
@@ -237,7 +260,7 @@ export default function Brasa() {
       e.removeListener?.("accountsChanged", onAcc as never);
       e.removeListener?.("chainChanged", onChain as never);
     };
-  }, []);
+  }, [walletId]);
 
   const netOk = !!dep && chainId === dep.chainId;
 
@@ -265,9 +288,10 @@ export default function Brasa() {
     };
   }, [dep, monto, cubrir]);
 
-  async function connect() {
-    const eth = getEth();
+  async function connect(id: Billetera["id"]) {
+    const eth = elegir(id);
     if (!eth) return;
+    setWalletId(id);
     try {
       const a = (await eth.request({ method: "eth_requestAccounts" })) as string[];
       setAccount(a[0] ?? null);
@@ -1145,13 +1169,22 @@ export default function Brasa() {
             )}
 
             {!hasWallet ? (
-              <a className="btn" href="https://core.app/" target="_blank" rel="noreferrer">
-                Instalar Core, la billetera de Avalanche
-              </a>
+              <>
+                <a className="btn" href="https://core.app/" target="_blank" rel="noreferrer">
+                  Instalar Core, la billetera de Avalanche
+                </a>
+                <a className="btn btn-sec" href="https://metamask.io/download/" target="_blank" rel="noreferrer">
+                  Instalar MetaMask
+                </a>
+              </>
             ) : !account ? (
-              <button className="btn" onClick={connect}>
-                {conCore ? "Abrir Core" : "Abrir mi billetera"}
-              </button>
+              <>
+                {wallets.map((b, i) => (
+                  <button key={b.id} className={i === 0 ? "btn" : "btn btn-sec"} onClick={() => connect(b.id)}>
+                    Abrir {b.nombre}
+                  </button>
+                ))}
+              </>
             ) : !netOk ? (
               <div className="aviso-red" role="alert">
                 <p>
@@ -1169,7 +1202,7 @@ export default function Brasa() {
 
             <p className="estado" role="status" aria-live="polite">
               {!hasWallet && "Para donar necesitás una billetera digital como Core o MetaMask."}
-              {hasWallet && !account && (conCore ? "Core está cerrada." : "Tu billetera está cerrada.")}
+              {hasWallet && !account && (wallets.length > 1 ? "Elegí con qué billetera donar." : "Tu billetera está cerrada.")}
               {account && netOk && tx.s === "idle" && `Billetera lista (${short(account)}).`}
             </p>
             {tx.s === "pendiente" && (
