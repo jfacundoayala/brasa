@@ -4,6 +4,15 @@ export const metadata: Metadata = {
   title: "Todos los links · brasa",
   description: "La web, el video, el resumen en una página, la presentación, el contrato y el código de brasa, en un solo lugar.",
   alternates: { canonical: "/links" },
+  openGraph: {
+    title: "Todos los links · brasa",
+    description: "La web, el video, el resumen en una página, la presentación, el contrato y el código de brasa, en un solo lugar.",
+    url: "/links",
+    // Un openGraph propio reemplaza entero al del layout: la imagen se repite acá.
+    images: [{ url: "/og-brasa.png", width: 1200, height: 630, alt: "Fondo brasa para bomberos y damnificados por incendios" }],
+    locale: "es_AR",
+    type: "website",
+  },
 };
 
 /** Link del video de la demo. Vacío: la fila no se muestra. */
@@ -14,7 +23,7 @@ type Fila = { titulo: string; detalle: string; href: string; destacado?: boolean
 // Los links cortos (/deck, /repo, /contrato...) se definen en next.config.mjs.
 const FILAS: Fila[] = [
   { titulo: "Web", detalle: "El mapa de incendios, el fondo y cómo donar", href: "/", destacado: true },
-  ...(VIDEO ? [{ titulo: "Video de la demo", detalle: "brasa en menos de 3 minutos, con una donación en vivo", href: VIDEO }] : []),
+  ...(VIDEO ? [{ titulo: "Video de la demo", detalle: "El recorrido de brasa en menos de 3 minutos, con una donación en vivo", href: VIDEO }] : []),
   { titulo: "Resumen en una página", detalle: "El one-pager, en PDF", href: "/one-pager" },
   { titulo: "Presentación", detalle: "El deck, en PDF", href: "/deck" },
   { titulo: "Repositorio", detalle: "Todo el código, público", href: "/repo" },

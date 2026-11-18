@@ -46,7 +46,7 @@ const cal = calibracion();
 /** Dólar oficial (venta) de DolarApi, solo como referencia en pesos. */
 type Dolar = { venta: number; fecha: string };
 const pesos = (usdc: bigint, d: Dolar) => Math.round((Number(usdc) / 1e6) * d.venta).toLocaleString("es-AR") + " pesos";
-/** Lo mismo con dólares comunes (número), para la Fórmula Brasa. */
+/** Lo mismo con dólares comunes (número), para la fórmula de brasa. */
 const pesosUsd = (usd: number, d: Dolar) => Math.round(usd * d.venta).toLocaleString("es-AR") + " pesos";
 const usd = (x: number) => Math.round(x).toLocaleString("es-AR");
 /** Nombre a mostrar de un destinatario: "cuartel-a" pasa a "Cuartel A" y "entidad-a" a "Entidad de asistencia A". */
@@ -326,15 +326,16 @@ export default function Brasa() {
   const nInc = focos?.incendios?.length ?? 0;
   const puntosGlobo = useMemo(() => (focos?.incendios ?? []).map((x) => ({ lat: x.lat, lon: x.lon, nivel: x.nivel })), [focos]);
   const enVivo = ver === "vivo" && !!focos && !focos.datosGuardados;
-  // Si la última detección tiene más de 6 h, no se dice "hoy": se muestra la fecha del dato.
-  const detViejo =
-    enVivo && !!focos?.ultimaDeteccionUtc && Date.now() / 1000 - focos.ultimaDeteccionUtc > 6 * 3600
-      ? new Date(focos.ultimaDeteccionUtc * 1000).toLocaleDateString("es-AR", {
+  // Si la última detección tiene más de 6 h, no se dice "hoy" ni "en vivo": se muestra la fecha del dato.
+  const vivoViejo =
+    !!focosVivo && !focosVivo.datosGuardados && !!focosVivo.ultimaDeteccionUtc && Date.now() / 1000 - focosVivo.ultimaDeteccionUtc > 6 * 3600
+      ? new Date(focosVivo.ultimaDeteccionUtc * 1000).toLocaleDateString("es-AR", {
           day: "numeric",
           month: "numeric",
           timeZone: "America/Argentina/Salta",
         })
       : null;
+  const detViejo = enVivo ? vivoViejo : null;
   // El contrato no envía con menos focos cruzados que el mínimo de la zona (v2: 2).
   const bajoMinimo = !!zone && zone.minHotspots > 0 && zone.hotspots < zone.minHotspots;
   const nConf = focos?.incendios?.filter((x) => x.confirmado).length ?? 0;
@@ -370,7 +371,7 @@ export default function Brasa() {
     <>
       <header className="barra">
         <div className="barra-in">
-          <Link href="/" className="barra-logo" aria-label="brasa, inicio">
+          <Link href="/" className="barra-logo" aria-label="Inicio de brasa">
             <Logo height={40} />
           </Link>
           <nav className="menu" aria-label="Secciones">
@@ -382,13 +383,13 @@ export default function Brasa() {
           </nav>
         </div>
       </header>
-      <Espacio puntos={puntosGlobo} enVivo={enVivo} />
+      <Espacio puntos={puntosGlobo} enVivo={enVivo && !detViejo} />
     <main id="inicio">
 
       <section className="hero" aria-label="Qué está pasando">
         <div className="hero-texto">
           <p className="antetitulo">
-            {enVivo && <span className="punto-vivo" aria-hidden="true" />} Salta · {!enVivo ? "datos guardados" : detViejo ? `último dato del ${detViejo}` : "hoy"}
+            {enVivo && !detViejo && <span className="punto-vivo" aria-hidden="true" />} Salta · {!enVivo ? "datos guardados" : detViejo ? `último dato del ${detViejo}` : "hoy"}
           </p>
           <h1 className="titular">
             Tu donación llega. <span className="acento">Podés comprobarlo.</span>
@@ -521,10 +522,10 @@ export default function Brasa() {
                   y cada hectárea cuesta {fmtUsdc(zone.costoHa)} USDC:
                 </p>
                 <ul className="desglose">
-                  <li><span>Apagar el fuego <small>({fmtUsdc(zone.costosHa.combate)} USDC por ha · {pctTxt(pz.combate)} %)</small></span><Plata v={fmtUsdc(zone.combate)} /></li>
-                  <li><span>Traslados y comida <small>({fmtUsdc(zone.costosHa.logistica)} USDC por ha · {pctTxt(pz.logistica)} %)</small></span><Plata v={fmtUsdc(zone.logistica)} /></li>
-                  <li><span>Ayuda a los vecinos <small>({fmtUsdc(zone.costosHa.asistencia)} USDC por ha · {pctTxt(pz.asistencia)} %)</small></span><Plata v={fmtUsdc(zone.asistencia)} /></li>
-                  <li className="total"><span>Meta</span><Plata v={fmtUsdc(zone.target)} /></li>
+                  <li><span>Apagar el fuego <small>({fmtUsdc(zone.costosHa.combate)} USDC por ha · {pctTxt(pz.combate)} %)</small></span><Monto v={fmtUsdc(zone.combate)} /></li>
+                  <li><span>Traslados y comida <small>({fmtUsdc(zone.costosHa.logistica)} USDC por ha · {pctTxt(pz.logistica)} %)</small></span><Monto v={fmtUsdc(zone.logistica)} /></li>
+                  <li><span>Ayuda a los vecinos <small>({fmtUsdc(zone.costosHa.asistencia)} USDC por ha · {pctTxt(pz.asistencia)} %)</small></span><Monto v={fmtUsdc(zone.asistencia)} /></li>
+                  <li className="total"><span>Meta</span><Monto v={fmtUsdc(zone.target)} /></li>
                 </ul>
                 <div className="mini fuente-meta">
                   <p>
@@ -744,9 +745,9 @@ export default function Brasa() {
           <div className="traza-vivo" aria-label="Cifras del fondo, leídas del contrato">
             <span className="vivo-tag"><i aria-hidden="true" /> En vivo, leído del contrato</span>
             <dl>
-              <div><dt>Donado</dt><dd><Plata v={fmtUsdc(zone.totalDonated)} /></dd></div>
-              <div><dt>En el fondo</dt><dd><Plata v={fmtUsdc(zone.balance)} /></dd></div>
-              <div><dt>Enviado a bomberos y damnificados</dt><dd><Plata v={fmtUsdc(zone.totalReleased)} /></dd></div>
+              <div><dt>Donado</dt><dd><Monto v={fmtUsdc(zone.totalDonated)} /></dd></div>
+              <div><dt>En el fondo</dt><dd><Monto v={fmtUsdc(zone.balance)} /></dd></div>
+              <div><dt>Enviado a bomberos y damnificados</dt><dd><Monto v={fmtUsdc(zone.totalReleased)} /></dd></div>
             </dl>
           </div>
         )}
@@ -771,7 +772,7 @@ export default function Brasa() {
           {focosEj && focosVivo && !focosVivo.datosGuardados && (
             <div className="vista" role="group" aria-label="Qué datos ver">
               <button className={ver === "vivo" ? "on" : ""} aria-pressed={ver === "vivo"} onClick={() => cambiarVista("vivo")}>
-                Hoy, en vivo
+                {vivoViejo ? `Último dato (${vivoViejo})` : "Hoy, en vivo"}
               </button>
               <button className={ver === "ejemplo" ? "on" : ""} aria-pressed={ver === "ejemplo"} onClick={() => cambiarVista("ejemplo")}>
                 Ejemplo con los tres niveles
@@ -941,7 +942,7 @@ export default function Brasa() {
                 return (
                   <>
                     {zone ? (
-                      <div className="inc-plata">
+                      <div className="inc-monto">
                         <span>Meta del fondo para Salta, la que paga el contrato</span>
                         <b>{fmtUsdc(zone.target)} USDC</b>
                         <small>
@@ -977,7 +978,7 @@ export default function Brasa() {
                               {k.ambiente && <> × ambiente {k.ambiente.f}</>}
                             </small>
                           </span>
-                          <Plata v={usd(k.combate)} />
+                          <Monto v={usd(k.combate)} />
                         </li>
                         {k.horas > 0 && (
                           <li>
@@ -987,7 +988,7 @@ export default function Brasa() {
                                 {k.horas} h × {usd(HORA_AVION)} USDC por hora
                               </small>
                             </span>
-                            <Plata v={usd(k.aereo)} />
+                            <Monto v={usd(k.aereo)} />
                           </li>
                         )}
                         {k.viviendas > 0 && dolar && (
@@ -999,7 +1000,7 @@ export default function Brasa() {
                                 {AYUDA_VIVIENDA_ARS.toLocaleString("es-AR")}
                               </small>
                             </span>
-                            <Plata v={usd(k.asistencia)} />
+                            <Monto v={usd(k.asistencia)} />
                           </li>
                         )}
                       </ul>
@@ -1354,8 +1355,8 @@ export default function Brasa() {
             <Logo height={34} />
             <p className="lema">Ayuda a tiempo, recursos a la vista.</p>
             <p>
-              La ayuda llega más rápido que una colecta. El satélite avisa en minutos, la NASA confirma en horas y el
-              dinero llega en segundos.
+              La ayuda llega más rápido que una colecta. El satélite avisa en minutos, la NASA confirma en horas y, con las dos
+              firmas, el contrato envía el dinero en segundos.
             </p>
           </div>
           <nav className="pie-col" aria-label="brasa">
@@ -1384,7 +1385,7 @@ export default function Brasa() {
             <b>Datos</b>
             <span>Focos: NASA FIRMS (VIIRS)</span>
             <span>Aviso rápido: GOES-19 (INPE)</span>
-            <span>Mapa: Esri World Imagery</span>
+            <span>Mapa: Esri, Vantor, Earthstar Geographics y © OpenStreetMap contributors</span>
             <span>Red: Avalanche Fuji</span>
           </div>
         </div>
@@ -1395,13 +1396,13 @@ export default function Brasa() {
 }
 
 /**
- * "Donar ahora" fijo abajo en el celular. Se esconde mientras se ve el botón de arriba o la tarjeta de donar,
- * para no tapar contenido ni repetir el mismo botón dos veces en pantalla.
+ * "Donar ahora" fijo abajo en el celular. Se esconde mientras se ve la portada, el botón de arriba o la tarjeta
+ * de donar, para no tapar contenido ni repetir el mismo botón dos veces en pantalla.
  */
 function BotonFlotante() {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
-    // El navegador avisa cuándo entran o salen de pantalla el botón de arriba y la tarjeta de donar.
+    // El navegador avisa cuándo entran o salen de pantalla la portada, el botón de arriba y la tarjeta de donar.
     // No se mide nada en cada scroll: así el desplazamiento queda fluido en el celular.
     if (typeof IntersectionObserver === "undefined") return;
     const enPantalla = new Map<Element, boolean>();
@@ -1411,7 +1412,7 @@ function BotonFlotante() {
     });
     const observados = new Set<Element>();
     const observar = () => {
-      for (const el of [document.querySelector(".hero-acciones"), document.getElementById("donar")]) {
+      for (const el of [document.querySelector(".espacio"), document.querySelector(".hero-acciones"), document.getElementById("donar")]) {
         if (el && !observados.has(el)) {
           observados.add(el);
           io.observe(el);
@@ -1433,9 +1434,9 @@ function BotonFlotante() {
 }
 
 /** Monto con su unidad y el ícono de dólar digital, para que nunca quede un número suelto. */
-function Plata({ v }: { v: string }) {
+function Monto({ v }: { v: string }) {
   return (
-    <b className="plata">
+    <b className="monto">
       {v} <IconoUsdc /> USDC
     </b>
   );

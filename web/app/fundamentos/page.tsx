@@ -16,6 +16,15 @@ export const metadata: Metadata = {
   title: "Fundamentos · brasa",
   description: "Cómo funciona brasa por dentro: la fórmula, el fondo en Avalanche, los oráculos, los satélites y las billeteras.",
   alternates: { canonical: "/fundamentos" },
+  openGraph: {
+    title: "Fundamentos · brasa",
+    description: "Cómo funciona brasa por dentro: la fórmula, el fondo en Avalanche, los oráculos, los satélites y las billeteras.",
+    url: "/fundamentos",
+    // Un openGraph propio reemplaza entero al del layout: la imagen se repite acá.
+    images: [{ url: "/og-brasa.png", width: 1200, height: 630, alt: "Fondo brasa para bomberos y damnificados por incendios" }],
+    locale: "es_AR",
+    type: "website",
+  },
 };
 
 type Dep = { fund: string; usdc: string; chainId: number; feeBps?: number; federation?: string; recipientDelay?: number };

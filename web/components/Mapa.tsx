@@ -4,6 +4,8 @@ import type { Map as MlMap, Marker, StyleSpecification } from "maplibre-gl";
 import type { Aviso } from "@/lib/goes";
 import { NIVEL_COLOR, type Focos, type Sensor } from "@/lib/chain";
 import { GRAVEDAD, llamaHtml } from "./Llamas";
+// El CSS del mapa viaja con el mapa, no con todas las páginas.
+import "maplibre-gl/dist/maplibre-gl.css";
 
 export const SENSOR_COLOR: Record<Sensor, string> = { noaa20: "#FFC857", noaa21: "#FF6A2B", modis: "#4FC3F7" };
 export const SENSOR_NAME: Record<Sensor, string> = { noaa20: "Satélite NOAA-20", noaa21: "Satélite NOAA-21", modis: "Satélites MODIS" };
@@ -20,6 +22,12 @@ type Props = {
 };
 
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services";
+const DEM = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
+const enlace = (url: string, texto: string) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${texto}</a>`;
+// Los créditos repiten el copyrightText que publica cada servicio; Esri pide además "Powered by Esri" a la vista.
+const CREDITO_IMAGEN = `${enlace("https://www.esri.com", "Powered by Esri")} | Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community`;
+const CREDITO_NOMBRES = `Esri, HERE, Garmin, ${enlace("https://www.openstreetmap.org/copyright", "© OpenStreetMap contributors")}, and the GIS user community`;
+const CREDITO_RELIEVE = `Relieve: ${enlace("https://github.com/tilezen/joerd/blob/master/docs/attribution.md", "Mapzen / AWS Terrain Tiles")}`;
 
 // Imagen satelital (Esri World Imagery), nombres de lugares encima y relieve real (AWS Terrain Tiles).
 const ESTILO: StyleSpecification = {
@@ -32,24 +40,18 @@ const ESTILO: StyleSpecification = {
       tiles: [`${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`],
       tileSize: 256,
       maxzoom: 19,
-      attribution: "Imagen: Esri, Maxar, Earthstar Geographics",
+      attribution: CREDITO_IMAGEN,
     },
-    nombres: { type: "raster", tiles: [`${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`], tileSize: 256, maxzoom: 19 },
-    sombras: {
-      type: "raster-dem",
-      tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-      encoding: "terrarium",
+    nombres: {
+      type: "raster",
+      tiles: [`${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`],
       tileSize: 256,
-      maxzoom: 12,
+      maxzoom: 19,
+      attribution: CREDITO_NOMBRES,
     },
-    relieve: {
-      type: "raster-dem",
-      tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
-      encoding: "terrarium",
-      tileSize: 256,
-      maxzoom: 12,
-      attribution: "Relieve: Mapzen / AWS Terrain Tiles",
-    },
+    // tileSize 512 pide un nivel menos de relieve: cerca de la cuarta parte de las teselas.
+    sombras: { type: "raster-dem", tiles: [DEM], encoding: "terrarium", tileSize: 512, maxzoom: 12 },
+    relieve: { type: "raster-dem", tiles: [DEM], encoding: "terrarium", tileSize: 512, maxzoom: 12, attribution: CREDITO_RELIEVE },
   },
   layers: [
     { id: "satelite", type: "raster", source: "satelite", paint: { "raster-saturation": -0.15, "raster-contrast": 0.08, "raster-brightness-max": 0.82 } },
@@ -59,8 +61,30 @@ const ESTILO: StyleSpecification = {
   terrain: { source: "relieve", exaggeration: 1.3 },
 };
 
+// Etiquetas de los controles, en el idioma de la página.
+const TEXTOS = {
+  "Map.Title": "Mapa",
+  "NavigationControl.ZoomIn": "Acercar",
+  "NavigationControl.ZoomOut": "Alejar",
+  "NavigationControl.ResetBearing": "Volver al norte",
+  "FullscreenControl.Enter": "Pantalla completa",
+  "FullscreenControl.Exit": "Salir de pantalla completa",
+  "AttributionControl.ToggleAttribution": "Ver créditos",
+};
+
+/** Celulares y conexiones con ahorro de datos: mapa plano, que pesa varias veces menos. */
+function liviano(): boolean {
+  const red = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  return window.matchMedia("(pointer: coarse)").matches || red?.saveData === true;
+}
+
 /** En pantallas de alta densidad se piden teselas un nivel más finas, para que la imagen no se vea borrosa. */
-function estilo(): StyleSpecification {
+function estilo(plano: boolean): StyleSpecification {
+  if (plano) {
+    // Sin relieve 3D ni sombreado: no se baja ninguna tesela de elevación.
+    const { satelite, nombres } = ESTILO.sources;
+    return { ...ESTILO, sources: { satelite, nombres }, layers: ESTILO.layers.filter((c) => c.id !== "sombras"), terrain: undefined };
+  }
   if (window.devicePixelRatio < 1.5) return ESTILO;
   return { ...ESTILO, sources: { ...ESTILO.sources, satelite: { ...ESTILO.sources.satelite, tileSize: 128 } as StyleSpecification["sources"][string] } };
 }
@@ -102,20 +126,25 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
       ml.setWorkerUrl(`/maplibre-gl-worker.mjs?v=${ml.getVersion()}`);
       const [w, s, e, n] = focos.zona.bbox;
       tactil.current = window.matchMedia("(pointer: coarse)").matches;
-      const centro: [number, number] = [(w + e) / 2, (s + n) / 2];
+      const plano = liviano();
+      // Con animación arranca un poco más lejos y se acerca; si no, ya encuadrado en la provincia.
+      const animar = !plano && !quieto();
+      const [dx, dy] = animar ? [e - w, n - s] : [0, 0];
       try {
         map = new ml.Map({
           container: el.current,
-          style: estilo(),
+          style: estilo(plano),
+          locale: TEXTOS,
           // Más de 2 no se nota y en celulares de 3× traba el relieve.
           pixelRatio: Math.min(window.devicePixelRatio, 2),
-          center: centro,
-          zoom: 1.6,
+          bounds: [[w - dx, s - dy], [e + dx, n + dy]],
+          fitBoundsOptions: { padding: 24 },
           pitch: 0,
           maxPitch: 75,
           scrollZoom: false,
           dragPan: !tactil.current,
-          attributionControl: { compact: true },
+          // Créditos abiertos de entrada; en mapas angostos se pliegan recién al mover el mapa.
+          attributionControl: {},
           canvasContextAttributes: { antialias: true },
         });
       } catch {
@@ -138,13 +167,15 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
         m.on("click", (ev) => {
           if (m.queryRenderedFeatures(ev.point, { layers: ["zona-relleno"] }).length) cb.current.onZona();
         });
-        // Entra desde el espacio hasta Salta, inclinado para que se vea la cordillera.
-        m.once("moveend", () => {
+        const limitar = () => {
           if (cancelled) return;
           m.setMinZoom(Math.max(3, m.getZoom() - 2.5));
           m.setMaxBounds([[w - 6, s - 5], [e + 6, n + 5]]);
-        });
-        m.fitBounds([[w, s], [e, n]], { padding: 24, pitch: 48, bearing: -12, duration: quieto() ? 0 : 3200, essential: false });
+        };
+        if (plano) return limitar();
+        // Con relieve queda inclinado, para que se vea la cordillera.
+        m.once("moveend", limitar);
+        m.fitBounds([[w, s], [e, n]], { padding: 24, pitch: 48, bearing: -12, duration: animar ? 2400 : 0, essential: false });
       });
 
       // Incendios: la llama del logo, tantas como el nivel (1 leve, 2 medio, 3 grave). Brillan y titilan.
@@ -187,7 +218,11 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
       for (const a of avisos) {
         const nodo = document.createElement("span");
         nodo.className = "aviso-goes";
-        nodo.title = `Posible foco (GOES-19, ${a.hora} UTC): aviso temprano, sin confirmar`;
+        nodo.title = `Posible foco (GOES-19, ${a.hora} UTC): aviso rápido, sin confirmar`;
+        // Sin esto el aviso no existe para el teclado ni para el lector de pantalla.
+        nodo.setAttribute("role", "img");
+        nodo.setAttribute("aria-label", nodo.title);
+        nodo.tabIndex = 0;
         marcas.push(new ml.Marker({ element: nodo }).setLngLat([a.lon, a.lat]).addTo(map));
       }
     })();
@@ -231,7 +266,7 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
     const lista = focos?.incendios ?? [];
     return (
       <div className="mapa sin-mapa">
-        <p>Tu navegador no puede dibujar el mapa. {lista.length ? "Estos son los incendios:" : "No hay incendios confirmados."}</p>
+        <p>Tu navegador no puede dibujar el mapa. {lista.length ? "Estos son los incendios:" : "Los satélites no ven incendios en Salta."}</p>
         <ul>
           {lista.map((x, i) => (
             <li key={x.id}>

@@ -1,4 +1,4 @@
-// Calibración de la Fórmula Brasa con los grandes incendios del mundo.
+// Calibración de la fórmula de brasa con los grandes incendios del mundo.
 // Cada caso es una temporada o emergencia con costo oficial publicado. La cuenta es simple y se puede repetir:
 //   costo por hectárea = gasto de respuesta (USD) / hectáreas quemadas
 // Se explica en docs/producto/FORMULA-BRASA.md y en la página /fundamentos.

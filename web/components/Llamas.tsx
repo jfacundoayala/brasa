@@ -1,4 +1,4 @@
-// La llama del logo de Brasa (sin el satélite), para marcar incendios y su gravedad.
+// La llama del logo de brasa (sin el satélite), para marcar incendios y su gravedad.
 // Gravedad: 1 a 3 llamas encendidas, como un medidor de "estrellas"; las apagadas quedan en gris.
 
 export const LLAMA_AFUERA =

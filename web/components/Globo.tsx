@@ -3,9 +3,10 @@
 // el tiempo corre acelerado y el satélite está fuera de escala para que se vea.
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Html, Line, PerformanceMonitor, Stars } from "@react-three/drei";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { SatRec } from "satellite.js";
+import { NIVEL_COLOR } from "@/lib/chain";
 import { anillo, distanciaKm, estado, gmst, latLon, satrec, type Estado, type Tle } from "@/lib/orbita";
 
 export type Punto = { lat: number; lon: number; nivel: 1 | 2 | 3 };
@@ -14,7 +15,6 @@ export type EstadoSat = Estado & { nombre: string; sobreSalta: boolean };
 export const SALTA = { lat: -24.8, lon: -65.4 };
 /** El satélite "ve" Salta cuando pasa a menos de esto (la franja de VIIRS mide unos 3000 km). */
 const RADIO_VISTA_KM = 1500;
-const COLOR_NIVEL = { 1: "#FFD166", 2: "#FF8A4C", 3: "#FF3D1F" } as const;
 
 type Props = {
   tles: Tle[];
@@ -24,29 +24,44 @@ type Props = {
   quieto: boolean;
   onEstado?: (e: EstadoSat) => void;
 };
+/** Lo que Globo decide una vez y reparte a la escena. */
+type Montaje = { liviano: boolean; portal: React.RefObject<HTMLElement> };
 
 /** En celular se dibuja más liviano: menos píxeles, menos estrellas y la textura de 2K. */
-const liviano = () => window.matchMedia("(pointer: coarse), (max-width: 979px)").matches;
+const esLiviano = () => window.matchMedia("(pointer: coarse), (max-width: 979px)").matches;
 
-export default function Globo(props: Props) {
+function Globo(props: Props) {
+  // Se decide al montar: girar la pantalla no vuelve a bajar texturas ni recrea las estrellas.
+  const [liviano] = useState(esLiviano);
   // Si el equipo no llega a dibujar fluido, baja la resolución en vez de trabarse.
-  const [tope, setTope] = useState(() => (liviano() ? 1.5 : 2));
+  const [tope, setTope] = useState(liviano ? 1 : 2);
   const dpr = useMemo<[number, number]>(() => [1, tope], [tope]);
+  // Capa propia para las etiquetas: si drei elige el contenedor por su cuenta, puede cambiarlo entre renders y perder una.
+  const [capa, setCapa] = useState<HTMLDivElement | null>(null);
+  const portal = useMemo(() => ({ current: capa }) as React.RefObject<HTMLElement>, [capa]);
   return (
-    <Canvas
-      camera={{ position: [0, 0, 3.7], fov: 36 }}
-      dpr={dpr}
-      frameloop={props.activo ? "always" : "never"}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      aria-hidden="true"
-    >
-      <PerformanceMonitor onDecline={() => setTope(1)} />
-      <Escena {...props} />
-    </Canvas>
+    <>
+      <div ref={setCapa} className="globo-capa" aria-hidden="true" />
+      {capa && (
+        <Canvas
+          camera={{ position: [0, 0, 3.7], fov: 36 }}
+          dpr={dpr}
+          frameloop={props.activo ? "always" : "never"}
+          gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+          aria-hidden="true"
+        >
+          <PerformanceMonitor onDecline={() => setTope(1)} />
+          <Escena {...props} liviano={liviano} portal={portal} />
+        </Canvas>
+      )}
+    </>
   );
 }
 
-function Escena({ tles, puntos, aceleracion, quieto, onEstado }: Props) {
+// Con memo, el panel de telemetría se actualiza sin volver a renderizar la escena.
+export default memo(Globo);
+
+function Escena({ tles, puntos, aceleracion, quieto, onEstado, liviano, portal }: Props & Montaje) {
   const inclinacion = useRef<THREE.Group>(null);
   const giro = useRef<THREE.Group>(null);
   const puntero = useRef({ x: 0, y: 0 });
@@ -77,15 +92,15 @@ function Escena({ tles, puntos, aceleracion, quieto, onEstado }: Props) {
 
   return (
     <>
-      <Stars radius={80} depth={40} count={liviano() ? 1200 : 2600} factor={3.2} saturation={0} fade speed={quieto ? 0 : 0.4} />
+      <Stars radius={80} depth={40} count={liviano ? 1200 : 2600} factor={3.2} saturation={0} fade speed={quieto ? 0 : 0.4} />
       <ambientLight intensity={0.25} />
       <directionalLight position={[SOL.x * 5, SOL.y * 5, SOL.z * 5]} intensity={2.2} />
       <group ref={inclinacion} rotation={[baseX, 0, 0]}>
         <group ref={giro} rotation={[0, baseY, 0]}>
-          <Tierra />
-          <Fuegos puntos={puntos} quieto={quieto} />
+          <Tierra liviano={liviano} />
+          <Fuegos puntos={puntos} quieto={quieto} portal={portal} />
           {tles.map((t, i) => (
-            <Satelite key={t.id} tle={t} principal={i === 0} aceleracion={aceleracion} onEstado={i === 0 ? onEstado : undefined} />
+            <Satelite key={t.id} tle={t} principal={i === 0} aceleracion={aceleracion} onEstado={i === 0 ? onEstado : undefined} portal={portal} />
           ))}
         </group>
       </group>
@@ -96,10 +111,10 @@ function Escena({ tles, puntos, aceleracion, quieto, onEstado }: Props) {
 
 const SOL = new THREE.Vector3(-0.55, 0.35, 0.76).normalize();
 
-function Tierra() {
+function Tierra({ liviano }: Pick<Montaje, "liviano">) {
   const max = useThree((s) => s.gl.capabilities.maxTextureSize);
   const [dia, noche, relieve] = useLoader(THREE.TextureLoader, [
-    !liviano() && max >= 4096 ? "/tierra/dia-4k.webp" : "/tierra/dia.webp",
+    !liviano && max >= 4096 ? "/tierra/dia-4k.webp" : "/tierra/dia.webp",
     "/tierra/noche.webp",
     "/tierra/relieve.webp",
   ]);
@@ -197,7 +212,7 @@ function useBrillo() {
   }, []);
 }
 
-function Fuegos({ puntos, quieto }: { puntos: Punto[]; quieto: boolean }) {
+function Fuegos({ puntos, quieto, portal }: { puntos: Punto[]; quieto: boolean } & Pick<Montaje, "portal">) {
   const brillo = useBrillo();
   const onda = useRef<THREE.Mesh>(null);
   const grupo = useRef<THREE.Group>(null);
@@ -229,12 +244,12 @@ function Fuegos({ puntos, quieto }: { puntos: Punto[]; quieto: boolean }) {
           const base = 0.035 + p.nivel * 0.012;
           return (
             <sprite key={i} position={latLon(p.lat, p.lon, 1.006)} scale={base} userData={{ base }}>
-              <spriteMaterial map={brillo} color={COLOR_NIVEL[p.nivel]} blending={THREE.AdditiveBlending} depthWrite={false} transparent />
+              <spriteMaterial map={brillo} color={NIVEL_COLOR[p.nivel]} blending={THREE.AdditiveBlending} depthWrite={false} transparent />
             </sprite>
           );
         })}
       </group>
-      <Html position={latLon(SALTA.lat + 1.2, SALTA.lon + 1.5, 1.01)} center zIndexRange={[20, 0]} className="globo-etiqueta-caja">
+      <Html portal={portal} position={latLon(SALTA.lat + 1.2, SALTA.lon + 1.5, 1.01)} center zIndexRange={[20, 0]} className="globo-etiqueta-caja">
         <span className="globo-etiqueta">
           <i aria-hidden="true" /> Salta{puntos.length > 0 && ` · ${puntos.length} ${puntos.length === 1 ? "incendio" : "incendios"}`}
         </span>
@@ -243,13 +258,30 @@ function Fuegos({ puntos, quieto }: { puntos: Punto[]; quieto: boolean }) {
   );
 }
 
-function Satelite({ tle, principal, aceleracion, onEstado }: { tle: Tle; principal: boolean; aceleracion: number; onEstado?: (e: EstadoSat) => void }) {
+/** ¿La Tierra (radio 1, en el origen) tapa el punto p visto desde la cámara c? */
+function tapaLaTierra(p: THREE.Vector3, c: THREE.Vector3): boolean {
+  const largo = p.distanceTo(c);
+  if (largo === 0) return false;
+  // Distancia, sobre la línea de vista, hasta el punto que pasa más cerca del centro.
+  const t = (c.lengthSq() - c.dot(p)) / largo;
+  return t > 0 && t < largo && c.lengthSq() - t * t < 1;
+}
+
+function Satelite({
+  tle,
+  principal,
+  aceleracion,
+  onEstado,
+  portal,
+}: { tle: Tle; principal: boolean; aceleracion: number; onEstado?: (e: EstadoSat) => void } & Pick<Montaje, "portal">) {
   const s: SatRec = useMemo(() => satrec(tle), [tle]);
   const inicio = useMemo(() => Date.now(), []);
   const puntos = useMemo(() => anillo(s, new Date(inicio)), [s, inicio]);
   const sat = useRef<THREE.Group>(null);
   const orbita = useRef<THREE.Group>(null);
   const haz = useRef<THREE.Mesh>(null);
+  const etiqueta = useRef<HTMLSpanElement>(null);
+  const mundo = useMemo(() => new THREE.Vector3(), []);
   const ultimoAviso = useRef(0);
   // Reloj propio: el del renderer vuelve a cero cada vez que el globo se pausa.
   const reloj = useRef(0);
@@ -265,15 +297,21 @@ function Satelite({ tle, principal, aceleracion, onEstado }: { tle: Tle; princip
     return g;
   }, []);
 
-  useFrame((_, dt) => {
+  useFrame(({ camera }, dt) => {
     reloj.current += Math.min(dt, 0.1);
-    const ahora = new Date(inicio + reloj.current * 1000 * aceleracion);
+    // Sin aceleración se usa la hora real, que no se atrasa cuando el globo se pausa.
+    const ahora = aceleracion === 1 ? new Date() : new Date(inicio + reloj.current * 1000 * aceleracion);
     const e = estado(s, ahora);
     if (!e || !sat.current) return;
     sat.current.position.set(...e.pos);
     sat.current.parent?.localToWorld(centro.set(0, 0, 0));
     sat.current.lookAt(centro);
     if (orbita.current) orbita.current.rotation.y = -gmst(ahora);
+    if (etiqueta.current) {
+      // Del otro lado del planeta el satélite no se ve: su nombre tampoco.
+      const ver = tapaLaTierra(sat.current.getWorldPosition(mundo), camera.position) ? "hidden" : "visible";
+      if (etiqueta.current.style.visibility !== ver) etiqueta.current.style.visibility = ver;
+    }
     const dist = distanciaKm(e.lat, e.lon, SALTA.lat, SALTA.lon);
     const sobreSalta = dist < RADIO_VISTA_KM;
     if (haz.current) {
@@ -305,8 +343,10 @@ function Satelite({ tle, principal, aceleracion, onEstado }: { tle: Tle; princip
           </mesh>
         )}
         {principal && (
-          <Html center position={[0, 0.07, 0]} zIndexRange={[20, 0]} className="globo-etiqueta-caja">
-            <span className="globo-sat">{tle.nombre}</span>
+          <Html portal={portal} center position={[0, 0.07, 0]} zIndexRange={[20, 0]} className="globo-etiqueta-caja">
+            <span ref={etiqueta} className="globo-sat">
+              {tle.nombre}
+            </span>
           </Html>
         )}
       </group>

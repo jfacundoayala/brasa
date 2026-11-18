@@ -137,7 +137,7 @@ html { scroll-behavior: smooth; }
 @keyframes vuela { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { .fuego svg { animation: none; } }
 
-/* --- tarjeta del incendio (plata, cuartel) y barra que apaga el fuego (12/11) --- */
+/* --- tarjeta del incendio (dinero, cuartel) y barra que apaga el fuego (12/11) --- */
 .inc-monto { font-size: 1.1rem; margin: .4rem 0 .2rem; }
 .inc-quien { border-top: 1px solid #d6cbc1; margin-top: 8px; padding-top: 6px; }
 .inc-quien p { margin: .25rem 0; }
@@ -153,7 +153,7 @@ html { scroll-behavior: smooth; }
 .inc-datos li.mini { display: block; }
 .fuente-inc { font-size: .85rem; color: #4a3f38; border-top: 1px solid #d6cbc1; padding-top: 6px; margin: 8px 0 0; }
 
-/* Fórmula Brasa en la tarjeta del incendio */
+/* Fórmula de brasa en la tarjeta del incendio */
 .formula h3 { font-size: .95rem; margin: .8rem 0 .2rem; }
 .formula .desglose small { display: block; font-size: .75rem; opacity: .75; font-weight: 400; }
 .factores { list-style: none; padding: 0; margin: .4rem 0; font-size: .85rem; display: grid; gap: .25rem; }
@@ -220,10 +220,10 @@ details > summary { cursor: pointer; font-weight: 700; min-height: 44px; display
 .sello { font-size: .8rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
 .sello.si { background: #c9efdc; color: #0b4a2c; }
 .sello.no { background: #fff3cd; color: #6b4e00; }
-.inc-plata { background: #fff; border: 2px solid #f1d6c4; border-radius: 12px; padding: 10px 12px; margin: 8px 0; display: grid; }
-.inc-plata span { font-size: .9rem; color: #4a3f38; }
-.inc-plata b { font-family: "Space Grotesk Variable", system-ui, sans-serif; font-size: 1.8rem; color: #b33a00; line-height: 1.1; }
-.inc-plata small { color: #4a3f38; }
+.inc-monto { background: #fff; border: 2px solid #f1d6c4; border-radius: 12px; padding: 10px 12px; margin: 8px 0; display: grid; }
+.inc-monto span { font-size: .9rem; color: #4a3f38; }
+.inc-monto b { font-family: "Space Grotesk Variable", system-ui, sans-serif; font-size: 1.8rem; color: #b33a00; line-height: 1.1; }
+.inc-monto small { color: #4a3f38; }
 .viento, .cuartel { margin: .3rem 0; }
 .formula { border-top: 1px solid #d6cbc1; margin-top: 6px; }
 .stepper { list-style: none; padding: 0; margin: 0 0 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
@@ -279,14 +279,15 @@ footer p { margin: 4px 0; }
 .tabla-scroll { overflow-x: auto; }
 
 /* Montos con unidad e ícono */
-.plata { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.monto { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .icono-usdc { flex: none; vertical-align: -3px; }
 .desglose li.total { font-weight: 700; border-bottom: 0; }
 .fuente-meta { border-left: 3px solid var(--ambar); padding-left: 8px; }
 
 /* Mapa que no atrapa la ruedita */
 .mapa-caja { position: relative; }
-.mapa-pista { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 1000; pointer-events: none; background: rgba(20, 17, 15, .85); color: var(--ceniza); border: 1px solid #5a4a40; padding: 6px 12px; border-radius: 999px; font-size: .9rem; font-weight: 700; white-space: nowrap; }
+/* Arriba: abajo quedan los créditos del mapa, que tienen que leerse. */
+.mapa-pista { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 1000; pointer-events: none; background: rgba(20, 17, 15, .85); color: var(--ceniza); border: 1px solid #5a4a40; padding: 6px 12px; border-radius: 999px; font-size: .9rem; font-weight: 700; white-space: nowrap; }
 
 /* Aviso: menos focos cruzados que el mínimo del contrato */
 .aviso-minimo { margin: 8px 0; padding: 8px 10px; border-left: 3px solid var(--ambar); background: rgba(255, 176, 0, .08); border-radius: 6px; font-size: .92rem; line-height: 1.35; }
@@ -302,7 +303,7 @@ body { -webkit-tap-highlight-color: transparent; text-rendering: optimizeLegibil
 h1, h2, h3, .titular, .sec-tit { text-wrap: balance; }
 p, li, .bajada { text-wrap: pretty; }
 /* Números con ancho fijo: no "bailan" mientras el contador sube */
-.meta-num b, .meta-datos b, .contadores b, .inc-plata b, .grande, .pct, .plata { font-variant-numeric: tabular-nums; }
+.meta-num b, .meta-datos b, .contadores b, .inc-monto b, .grande, .pct, .monto { font-variant-numeric: tabular-nums; }
 /* Los saltos a #mapa y #donar no quedan pegados al borde */
 #mapa, #donar { scroll-margin-top: 12px; }
 summary:focus-visible { outline: 3px solid var(--brasa2); outline-offset: 2px; border-radius: 6px; }
@@ -574,7 +575,8 @@ main > .lema { margin: 18px 0 6px; font-size: .95rem; letter-spacing: .01em; }
 .cuarteles { margin-top: 32px; }
 
 /* Casilla "Sumo la comisión": al lado del texto, no estirada al 100 % */
-input[type="checkbox"] { width: 22px; height: 22px; padding: 0; margin: 0; flex: none; accent-color: var(--brasa); cursor: pointer; }
+/* La tarjeta de donar es clara: con el esquema oscuro de la página la casilla vacía parecería marcada. */
+input[type="checkbox"] { width: 22px; height: 22px; padding: 0; margin: 0; flex: none; accent-color: var(--brasa); cursor: pointer; color-scheme: light; }
 label.check { display: flex; align-items: flex-start; gap: 10px; font-weight: 700; cursor: pointer; }
 @media (max-width: 480px) { .montos-rapidos span { flex-basis: 100%; } }
 
@@ -584,7 +586,7 @@ label.check { display: flex; align-items: flex-start; gap: 10px; font-weight: 70
 .foto figcaption { margin-top: 6px; font-size: 0.72rem; line-height: 1.35; opacity: 0.7; }
 .foto figcaption a { color: inherit; }
 
-/* --- Qué hace Brasa: cuatro herramientas --- */
+/* --- Qué hace brasa: cuatro herramientas --- */
 .herramientas { margin: 56px 0 8px; }
 .herramientas .eyebrow { margin-top: 0; }
 .herramientas .sec-tit { font-size: clamp(1.6rem, 3.6vw, 2.3rem); letter-spacing: -.02em; margin-bottom: 10px; max-width: 46rem; }
@@ -739,6 +741,8 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
   background: radial-gradient(circle at 38% 36%, #1d3d6e, #0a1530 62%, #050a16);
   box-shadow: 0 0 80px 10px rgba(80, 150, 255, .25), inset -30px -40px 80px rgba(0, 0, 0, .6);
 }
+/* Capa de las etiquetas, encima del lienzo y del mismo tamaño. */
+.globo-capa { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .globo-etiqueta-caja { pointer-events: none; }
 .globo-etiqueta {
   display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; padding: 4px 10px; border-radius: 999px;
@@ -763,7 +767,8 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
 .hud dl div { display: flex; justify-content: space-between; gap: 10px; }
 .hud dt { font: 400 .74rem/1.5 var(--mono); color: #8b97ab; }
 .hud dd { margin: 0; font: 500 .74rem/1.5 var(--mono); color: #eef2f8; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.hud-pie { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); font-size: .72rem; color: #8b97ab; }
+.hud-pie { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); font-size: .72rem; color: #e3e9f2; }
+.hud-paso { display: block; margin-top: 2px; }
 .hud.escaneando .hud-pie { color: #ffb48a; }
 @media (max-width: 979px) {
   .espacio { min-height: auto; padding-bottom: 56px; }
@@ -772,7 +777,7 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
 }
 @media (max-width: 520px) { .hud { position: relative; right: auto; bottom: auto; width: 100%; margin: -28px 0 8px; } }
 .espacio-creditos {
-  position: absolute; z-index: 1; left: 20px; bottom: 16px; margin: 0; max-width: 46rem; font-size: .72rem; color: #6f7c92;
+  position: absolute; z-index: 1; left: 20px; bottom: 16px; margin: 0; max-width: 46rem; font-size: .72rem; color: #c3ccdb;
 }
 .espacio-creditos a { color: inherit; }
 .espacio-bajar {
@@ -780,7 +785,8 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
   font-size: .78rem; font-weight: 600; color: #b9c3d4; text-decoration: none; animation: flota 2.4s ease-in-out infinite;
 }
 @keyframes flota { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 4px); } }
-@media (max-width: 760px) { .espacio-creditos { display: none; } }
+/* En pantallas angostas los créditos van en el flujo, arriba de "Cómo ayuda", para no pisarse. */
+@media (max-width: 760px) { .espacio-creditos { position: relative; left: auto; bottom: auto; padding: 14px 20px 0; text-align: center; } }
 @media (prefers-reduced-motion: reduce) { .espacio-bajar { animation: none; } }
 
 /* Encabezado transparente sobre el espacio */
@@ -804,12 +810,15 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
 /* Mapa satelital (MapLibre) */
 .mapa { background: #05070d; overflow: hidden; }
 .mapa .maplibregl-canvas:focus-visible { outline: 2px solid var(--brasa); outline-offset: -2px; }
-.fuego-boton { padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; line-height: 0; }
+/* Área de toque de 36 px como mínimo; la llama sigue apoyada abajo, sobre su punto. */
+.fuego-boton { display: grid; place-items: end center; min-width: 36px; min-height: 36px; padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; line-height: 0; }
 .fuego-boton:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 6px; }
+.mapa .aviso-goes:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .mapa .maplibregl-ctrl-group { background: rgba(10, 14, 24, .78); border: 1px solid rgba(255, 255, 255, .14); box-shadow: none; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 .mapa .maplibregl-ctrl-group button + button { border-top-color: rgba(255, 255, 255, .1); }
 .mapa .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1) brightness(1.2); }
-.mapa .maplibregl-ctrl-attrib { background: rgba(10, 14, 24, .7); color: #9aa6ba; font-size: 11px; }
+/* Doble clase: la hoja de MapLibre carga después de esta y, a igual peso, ganaría su fondo claro. */
+.mapa .maplibregl-ctrl.maplibregl-ctrl-attrib { background: rgba(10, 14, 24, .7); color: #9aa6ba; font-size: 11px; }
 .mapa .maplibregl-ctrl-attrib a { color: #c9d3e3; }
 .mapa .maplibregl-ctrl-attrib-button { filter: invert(1); min-height: 0; height: 24px; background-repeat: no-repeat; }
 @media (max-width: 979px) {
@@ -825,9 +834,12 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
 .mapa.sin-mapa button:hover, .mapa.sin-mapa button.elegido { border-color: var(--brasa, #FF5A1F); }
 
 /* Entrada de la portada, escalonada con --i */
-@keyframes entra { from { opacity: 0; transform: translateY(18px); } }
+/* El texto principal solo se desplaza: si arrancara transparente, el navegador tardaría en darlo por pintado. */
+@keyframes entra { from { transform: translateY(18px); } }
+@keyframes entra-fundido { from { opacity: 0; transform: translateY(18px); } }
 @keyframes entra-globo { from { opacity: 0; transform: scale(.94); } }
 .entra { animation: entra .7s cubic-bezier(.22, 1, .36, 1) calc(var(--i, 0) * 80ms) backwards; }
+.espacio-texto .chip-sat.entra, .espacio-acciones.entra { animation-name: entra-fundido; }
 .espacio-globo { animation: entra-globo 1.2s cubic-bezier(.22, 1, .36, 1) backwards; }
 @media (prefers-reduced-motion: reduce) { .entra, .espacio-globo { animation: none; } }
 /* El panel va por encima de las etiquetas del globo (z-index hasta 20). */

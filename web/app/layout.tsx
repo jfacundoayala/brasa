@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/space-grotesk";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
-import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Ayuda a tiempo, recursos a la vista · brasa",
     description: "Cuando dos satélites de la NASA confirman un incendio, el fondo paga a los bomberos y a los damnificados. Piloto en Salta, en Avalanche Fuji.",
-    images: [{ url: "/og-brasa.png", width: 1200, height: 630, alt: "brasa, fondo para bomberos y damnificados por incendios" }],
+    images: [{ url: "/og-brasa.png", width: 1200, height: 630, alt: "Fondo brasa para bomberos y damnificados por incendios" }],
     locale: "es_AR",
     type: "website",
   },

@@ -1,8 +1,9 @@
 // Órbitas reales de los satélites que ven el fuego (NOAA-20 y NOAA-21), calculadas con SGP4 a partir de su TLE.
 // Coordenadas de la escena 3D: la Tierra tiene radio 1; x apunta al meridiano 0, y al polo norte.
 import { degreesLat, degreesLong, eciToEcf, eciToGeodetic, gstime, propagate, twoline2satrec, type SatRec } from "satellite.js";
+import type { Tle } from "./tle";
 
-export type Tle = { id: string; nombre: string; norad: number; line1: string; line2: string };
+export type { Tle };
 export type Estado = { pos: [number, number, number]; lat: number; lon: number; altKm: number; velKms: number };
 
 export const RADIO_TIERRA_KM = 6371;
@@ -30,13 +31,15 @@ export function estado(s: SatRec, d: Date): Estado | null {
   const g = gstime(d);
   const geo = eciToGeodetic(pv.position, g);
   const v = pv.velocity;
-  return {
+  const e: Estado = {
     pos: aEscena(eciToEcf(pv.position, g)),
     lat: degreesLat(geo.latitude),
     lon: degreesLong(geo.longitude),
     altKm: geo.height,
     velKms: Math.hypot(v.x, v.y, v.z),
   };
+  // Un TLE roto propaga NaN: mejor no dar posición que mostrarla.
+  return [...e.pos, e.lat, e.lon, e.altKm, e.velKms].every(Number.isFinite) ? e : null;
 }
 
 /** Período orbital en minutos (`no` viene en radianes por minuto). */
@@ -48,7 +51,9 @@ export function anillo(s: SatRec, d: Date, n = 240): [number, number, number][] 
   const out: [number, number, number][] = [];
   for (let i = 0; i <= n; i++) {
     const pv = propagate(s, new Date(d.getTime() + (p * i) / n));
-    if (pv && typeof pv.position === "object") out.push(aEscena(pv.position));
+    if (!pv || typeof pv.position !== "object") continue;
+    const q = aEscena(pv.position);
+    if (q.every(Number.isFinite)) out.push(q);
   }
   return out;
 }
@@ -60,24 +65,4 @@ export function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: numb
   const r = Math.PI / 180;
   const a = Math.sin(((lat2 - lat1) * r) / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(((lon2 - lon1) * r) / 2) ** 2;
   return 2 * RADIO_TIERRA_KM * Math.asin(Math.sqrt(a));
-}
-
-/** TLE guardados en el sitio; si responde, se refrescan con los del día. */
-export async function leerTles(): Promise<Tle[]> {
-  const guardados: Tle[] = (await (await fetch("/tle.json")).json()).satelites;
-  const frescos = await Promise.all(
-    guardados.map(async (t) => {
-      try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 4000);
-        const r = await fetch(`https://tle.ivanstanojevic.me/api/tle/${t.norad}`, { signal: ctrl.signal });
-        clearTimeout(timer);
-        const j = r.ok ? await r.json() : null;
-        return j?.line1 && j?.line2 ? { ...t, line1: j.line1, line2: j.line2 } : t;
-      } catch {
-        return t;
-      }
-    }),
-  );
-  return frescos;
 }
