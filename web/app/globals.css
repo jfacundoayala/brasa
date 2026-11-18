@@ -795,7 +795,8 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
     }
   }
 }
-@keyframes aparece { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+/* Solo opacidad: si se desplazan, los enlaces del menú (#mapa, #donar) caen debajo del encabezado. */
+@keyframes aparece { from { opacity: 0; } }
 
 /* Números y datos técnicos en mono */
 .hash, code { font-family: var(--mono); }
