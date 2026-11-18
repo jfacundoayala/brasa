@@ -25,7 +25,7 @@
 11. **FIRMS con 2 días:** con 1 día la API trae solo el día UTC en curso y de madrugada viene vacía. La frescura la controla el contrato (24 h).
 
 ### Despliegue (`deploy.mjs`)
-12. **Roles separados:** el deployer solo despliega. La federación es otra wallet (`scripts/crear-federacion.mjs`), cada oráculo tiene su propia clave y la tesorería es otra. Quien manda `reportFire` solo paga el gas: no tiene ningún poder.
+12. **Roles separados:** el deployer solo despliega. La federación es otra billetera (`scripts/crear-federacion.mjs`), cada oráculo tiene su propia clave y la tesorería es otra. Quien manda `reportFire` solo paga el gas: no tiene ningún poder.
 13. **Demora pública** para que una credencial nueva cobre. Hoy, en Fuji: 10 minutos (v1: 60 s). Paso siguiente, en el piloto: 72 h.
 14. **Mínimo de 2 focos cruzados por sensor** (v1: 3 focos sueltos en la provincia). Con el cruce, cada foco ya es fuego visto por dos satélites en el mismo lugar. La meta es proporcional (1 foco = 14 ha = 4.480 USDC), y la meta es el techo de cada pago, con 12 h entre liberaciones.
 15. Escribe `deployment.fuji.json` con versión, bloque, polígono, federación y demora.
