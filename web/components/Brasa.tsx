@@ -10,6 +10,7 @@ import {
   confirmados,
   donar,
   errorCorto,
+  esCore,
   fmtUsdc,
   getEth,
   loadZone,
@@ -126,6 +127,7 @@ export default function Brasa() {
   const [account, setAccount] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [hasWallet, setHasWallet] = useState(true);
+  const [conCore, setConCore] = useState(false);
   const [amount, setAmount] = useState("100");
   const [cubrir, setCubrir] = useState(false);
   const [reparto, setReparto] = useState<Reparto | null>(null);
@@ -222,6 +224,7 @@ export default function Brasa() {
   useEffect(() => {
     const eth = getEth();
     setHasWallet(!!eth);
+    setConCore(esCore());
     if (!eth) return;
     const onAcc = (a: string[]) => setAccount(a[0] ?? null);
     const onChain = (c: string) => setChainId(parseInt(c, 16));
@@ -1147,7 +1150,7 @@ export default function Brasa() {
               </a>
             ) : !account ? (
               <button className="btn" onClick={connect}>
-                Abrir mi billetera
+                {conCore ? "Abrir Core" : "Abrir mi billetera"}
               </button>
             ) : !netOk ? (
               <div className="aviso-red" role="alert">
@@ -1166,7 +1169,7 @@ export default function Brasa() {
 
             <p className="estado" role="status" aria-live="polite">
               {!hasWallet && "Para donar necesitás una billetera digital como Core o MetaMask."}
-              {hasWallet && !account && "Tu billetera está cerrada."}
+              {hasWallet && !account && (conCore ? "Core está cerrada." : "Tu billetera está cerrada.")}
               {account && netOk && tx.s === "idle" && `Billetera lista (${short(account)}).`}
             </p>
             {tx.s === "pendiente" && (
