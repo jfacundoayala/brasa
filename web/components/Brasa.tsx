@@ -861,7 +861,7 @@ export default function Brasa() {
             )}
             <p className="mini">
               Fuentes: NASA FIRMS (satélites NOAA-20, NOAA-21 y MODIS), GOES-19 (NOAA) por el programa Queimadas del INPE,
-              OpenStreetMap, geoBoundaries (IGN) y Censo 2022 (INDEC).
+              Esri World Imagery, AWS Terrain Tiles, geoBoundaries (IGN) y Censo 2022 (INDEC).
             </p>
           </details>
         </section>
@@ -1384,7 +1384,7 @@ export default function Brasa() {
             <b>Datos</b>
             <span>Focos: NASA FIRMS (VIIRS)</span>
             <span>Aviso rápido: GOES-19 (INPE)</span>
-            <span>Mapa: © OpenStreetMap</span>
+            <span>Mapa: Esri World Imagery</span>
             <span>Red: Avalanche Fuji</span>
           </div>
         </div>

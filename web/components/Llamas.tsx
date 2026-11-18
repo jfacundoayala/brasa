@@ -9,7 +9,7 @@ export const LLAMA_ADENTRO =
 export type Nivel = 1 | 2 | 3;
 export const GRAVEDAD: Record<Nivel, string> = { 1: "leve", 2: "medio", 3: "grave" };
 
-/** SVG de una llama como texto, para los marcadores de Leaflet (que piden HTML). */
+/** SVG de una llama como texto, para los marcadores del mapa (que piden HTML). */
 export function llamaHtml(px: number): string {
   // Borde oscuro fino para que se lea sobre el mapa; sin sombras pesadas.
   return `<svg viewBox="14 0 72 96" width="${Math.round(px * 0.75)}" height="${px}" shape-rendering="geometricPrecision" aria-hidden="true"><path d="${LLAMA_AFUERA}" fill="#FF5A1F" stroke="#1B1512" stroke-width="5" stroke-linejoin="round" paint-order="stroke"/><path d="${LLAMA_ADENTRO}" fill="#FFB000"/></svg>`;

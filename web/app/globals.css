@@ -380,7 +380,7 @@ main { padding: 8px 16px 24px; }
 }
 .franja-prueba svg { flex: none; }
 
-/* Encabezado fijo con vidrio esmerilado. z-index por encima de Leaflet (sus capas llegan a 1000) */
+/* Encabezado fijo con vidrio esmerilado. z-index por encima del mapa */
 .barra {
   position: sticky; top: 0; z-index: 1100;
   background: rgba(20, 17, 15, .72);
@@ -729,7 +729,9 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
 }
 .btn-vidrio:not(:disabled):hover { background: rgba(255, 255, 255, .1); box-shadow: 0 6px 24px rgba(124, 196, 255, .15); }
 
-.espacio-globo { position: relative; aspect-ratio: 1; width: 100%; max-width: 680px; justify-self: center; }
+.espacio-globo { position: relative; width: 100%; max-width: 680px; justify-self: center; }
+/* El lienzo reserva su lugar: nada salta cuando carga el globo. */
+.globo-lienzo { position: relative; aspect-ratio: 1; width: 100%; }
 @media (min-width: 980px) { .espacio-globo { margin-right: -40px; } }
 .espacio-globo canvas { display: block; }
 .globo-cargando {
@@ -808,7 +810,7 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
 .mapa .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1) brightness(1.2); }
 .mapa .maplibregl-ctrl-attrib { background: rgba(10, 14, 24, .7); color: #9aa6ba; font-size: 11px; }
 .mapa .maplibregl-ctrl-attrib a { color: #c9d3e3; }
-.mapa .maplibregl-ctrl-attrib-button { filter: invert(1); }
+.mapa .maplibregl-ctrl-attrib-button { filter: invert(1); min-height: 0; height: 24px; background-repeat: no-repeat; }
 @media (max-width: 979px) {
   .espacio { padding-top: calc(var(--alto-barra) + 4px); }
   .espacio-globo { order: -1; width: min(100%, 420px); margin: -8px auto -20px; }
@@ -820,3 +822,12 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
 .mapa.sin-mapa ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
 .mapa.sin-mapa button { width: 100%; min-height: 44px; padding: 10px 14px; text-align: left; font: inherit; color: inherit; background: rgba(255, 255, 255, .05); border: 1px solid var(--borde); border-radius: 10px; cursor: pointer; }
 .mapa.sin-mapa button:hover, .mapa.sin-mapa button.elegido { border-color: var(--brasa, #FF5A1F); }
+
+/* Entrada de la portada, escalonada con --i */
+@keyframes entra { from { opacity: 0; transform: translateY(18px); } }
+@keyframes entra-globo { from { opacity: 0; transform: scale(.94); } }
+.entra { animation: entra .7s cubic-bezier(.22, 1, .36, 1) calc(var(--i, 0) * 80ms) backwards; }
+.espacio-globo { animation: entra-globo 1.2s cubic-bezier(.22, 1, .36, 1) backwards; }
+@media (prefers-reduced-motion: reduce) { .entra, .espacio-globo { animation: none; } }
+/* El panel va por encima de las etiquetas del globo (z-index hasta 20). */
+.hud { z-index: 30; }

@@ -1,7 +1,6 @@
 "use client";
 // Portada: la Tierra vista desde el espacio, con NOAA-20 y NOAA-21 en sus órbitas reales y los incendios de Salta.
 import dynamic from "next/dynamic";
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import Brasas from "./Brasas";
 import { Gravedad } from "./Llamas";
@@ -30,10 +29,11 @@ export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: b
   const [activo, setActivo] = useState(true);
   const [webgl, setWebgl] = useState(true);
   const caja = useRef<HTMLElement>(null);
-  const quieto = !!useReducedMotion();
+  const [quieto, setQuieto] = useState(false);
 
   useEffect(() => {
     setWebgl(hayWebgl());
+    setQuieto(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     leerTles().then(setTles).catch(() => setTles([]));
   }, []);
 
@@ -45,8 +45,8 @@ export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: b
     return () => io.disconnect();
   }, []);
 
-  const entra = (i: number) =>
-    quieto ? {} : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.7, delay: 0.08 * i, ease: [0.22, 1, 0.36, 1] as const } };
+  // La entrada es CSS puro: el texto se pinta sin esperar al JavaScript.
+  const entra = (i: number) => ({ style: { "--i": i } as React.CSSProperties });
 
   return (
     <section className="espacio" ref={caja} aria-label="brasa desde el espacio">
@@ -54,20 +54,20 @@ export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: b
       <Brasas />
       <div className="espacio-in">
         <div className="espacio-texto">
-          <motion.p className="chip-sat" {...entra(0)}>
+          <p className="chip-sat entra" {...entra(0)}>
             <span className="punto-vivo" aria-hidden="true" />
             <b>NASA FIRMS</b>
             <span aria-hidden="true">·</span> NOAA-20 y NOAA-21 <span aria-hidden="true">·</span>
             <span className="chip-sat-dim">{enVivo ? "mirando Salta ahora" : "ven el fuego desde el espacio"}</span>
-          </motion.p>
-          <motion.p className="marca" {...entra(1)}>
+          </p>
+          <p className="marca entra" {...entra(1)}>
             brasa
-          </motion.p>
-          <motion.p className="espacio-bajada" {...entra(2)}>
+          </p>
+          <p className="espacio-bajada entra" {...entra(2)}>
             Cuando dos satélites de la NASA confirman un incendio, el fondo paga a los bomberos y a los damnificados.{" "}
             <b>Ayuda a tiempo, recursos a la vista.</b>
-          </motion.p>
-          <motion.div className="espacio-niveles" {...entra(3)}>
+          </p>
+          <div className="espacio-niveles entra" {...entra(3)}>
             <span>Cada incendio, en tres niveles:</span>
             <ul>
               {([1, 2, 3] as const).map((n) => (
@@ -76,58 +76,53 @@ export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: b
                 </li>
               ))}
             </ul>
-          </motion.div>
-          <motion.div className="espacio-acciones" {...entra(4)}>
+          </div>
+          <div className="espacio-acciones entra" {...entra(4)}>
             <a className="btn btn-hero" href="#donar">
               Donar ahora
             </a>
             <a className="btn btn-vidrio" href="#mapa">
               Ver el mapa del fuego
             </a>
-          </motion.div>
+          </div>
         </div>
 
-        <motion.div
-          className="espacio-globo"
-          initial={quieto ? false : { opacity: 0, scale: 0.94 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {webgl && tles ? (
-            <Globo tles={tles} puntos={puntos} aceleracion={quieto ? 1 : ACELERACION} activo={activo} quieto={quieto} onEstado={setSat} />
-          ) : (
-            <div className="globo-cargando" aria-hidden="true" />
-          )}
-          {sat && (
-            <div className={`hud${sat.sobreSalta ? " escaneando" : ""}`} role="status" aria-live="off">
+        <div className="espacio-globo">
+          <div className="globo-lienzo">
+            {webgl && tles ? (
+              <Globo tles={tles} puntos={puntos} aceleracion={quieto ? 1 : ACELERACION} activo={activo} quieto={quieto} onEstado={setSat} />
+            ) : (
+              <div className="globo-cargando" aria-hidden="true" />
+            )}
+          </div>
+          {webgl && (
+            <div className={`hud${sat?.sobreSalta ? " escaneando" : ""}`} role="status" aria-live="off">
               <p className="hud-tit">
-                <i aria-hidden="true" /> {sat.nombre}, órbita calculada
+                <i aria-hidden="true" /> {sat?.nombre ?? "NOAA-20"}, órbita calculada
               </p>
               <dl>
                 <div>
                   <dt>Altura</dt>
-                  <dd>{fmt(sat.altKm, 0)} km</dd>
+                  <dd>{sat ? `${fmt(sat.altKm, 0)} km` : "…"}</dd>
                 </div>
                 <div>
                   <dt>Velocidad</dt>
-                  <dd>{fmt(sat.velKms)} km/s</dd>
+                  <dd>{sat ? `${fmt(sat.velKms)} km/s` : "…"}</dd>
                 </div>
                 <div>
                   <dt>Pasa sobre</dt>
-                  <dd>
-                    {coord(sat.lat, "N", "S")} · {coord(sat.lon, "E", "O")}
-                  </dd>
+                  <dd>{sat ? `${coord(sat.lat, "N", "S")} · ${coord(sat.lon, "E", "O")}` : "…"}</dd>
                 </div>
               </dl>
-              <p className="hud-pie">{sat.sobreSalta ? "Escaneando Salta con VIIRS" : `Tiempo acelerado ×${quieto ? 1 : ACELERACION}`}</p>
+              <p className="hud-pie">{sat?.sobreSalta ? "Escaneando Salta con VIIRS" : `Tiempo acelerado ×${quieto ? 1 : ACELERACION}`}</p>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
       <p className="espacio-creditos">
         Tierra: <a href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/" target="_blank" rel="noreferrer">NASA Blue Marble</a> · Órbitas: TLE de NORAD (SGP4) · satélites fuera de escala
       </p>
-      <a className="espacio-bajar" href="#inicio" aria-label="Bajar al fondo">
+      <a className="espacio-bajar" href="#inicio">
         <span>Cómo ayuda</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path d="M6 9l6 6 6-6" />

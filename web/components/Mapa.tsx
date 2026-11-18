@@ -40,14 +40,14 @@ const ESTILO: StyleSpecification = {
       tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
       encoding: "terrarium",
       tileSize: 256,
-      maxzoom: 14,
+      maxzoom: 12,
     },
     relieve: {
       type: "raster-dem",
       tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
       encoding: "terrarium",
       tileSize: 256,
-      maxzoom: 14,
+      maxzoom: 12,
       attribution: "Relieve: Mapzen / AWS Terrain Tiles",
     },
   },
@@ -58,6 +58,12 @@ const ESTILO: StyleSpecification = {
   ],
   terrain: { source: "relieve", exaggeration: 1.3 },
 };
+
+/** En pantallas de alta densidad se piden teselas un nivel más finas, para que la imagen no se vea borrosa. */
+function estilo(): StyleSpecification {
+  if (window.devicePixelRatio < 1.5) return ESTILO;
+  return { ...ESTILO, sources: { ...ESTILO.sources, satelite: { ...ESTILO.sources.satelite, tileSize: 128 } as StyleSpecification["sources"][string] } };
+}
 
 const quieto = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -76,8 +82,17 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
   const sel = useRef<number | null>(seleccionado);
   sel.current = seleccionado;
 
+  // El mapa (y sus teselas) recién se cargan cuando la persona se acerca: la portada queda liviana.
+  const [cerca, setCerca] = useState(false);
   useEffect(() => {
-    if (!el.current || !focos) return;
+    if (!el.current) return;
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setCerca(true), { rootMargin: "600px" });
+    io.observe(el.current);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!el.current || !focos || !cerca) return;
     let map: MlMap | undefined;
     let cancelled = false;
     (async () => {
@@ -91,7 +106,9 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
       try {
         map = new ml.Map({
           container: el.current,
-          style: ESTILO,
+          style: estilo(),
+          // Más de 2 no se nota y en celulares de 3× traba el relieve.
+          pixelRatio: Math.min(window.devicePixelRatio, 2),
           center: centro,
           zoom: 1.6,
           pitch: 0,
@@ -156,7 +173,7 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
       mapaRef.current = null;
       map?.remove();
     };
-  }, [focos]); // no se redibuja al elegir un incendio, para no perder el zoom
+  }, [focos, cerca]); // no se redibuja al elegir un incendio, para no perder el zoom
 
   // Capa aparte para los avisos GOES: se actualiza cada 10 min sin tocar el zoom.
   useEffect(() => {

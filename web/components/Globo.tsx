@@ -1,9 +1,9 @@
 "use client";
 // La Tierra en 3D con los satélites que ven el fuego. Las órbitas son reales (SGP4 con el TLE del día);
 // el tiempo corre acelerado y el satélite está fuera de escala para que se vea.
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { Html, Line, Stars } from "@react-three/drei";
-import { useEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
+import { Html, Line, PerformanceMonitor, Stars } from "@react-three/drei";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { SatRec } from "satellite.js";
 import { anillo, distanciaKm, estado, gmst, latLon, satrec, type Estado, type Tle } from "@/lib/orbita";
@@ -25,15 +25,22 @@ type Props = {
   onEstado?: (e: EstadoSat) => void;
 };
 
+/** En celular se dibuja más liviano: menos píxeles, menos estrellas y la textura de 2K. */
+const liviano = () => window.matchMedia("(pointer: coarse), (max-width: 979px)").matches;
+
 export default function Globo(props: Props) {
+  // Si el equipo no llega a dibujar fluido, baja la resolución en vez de trabarse.
+  const [tope, setTope] = useState(() => (liviano() ? 1.5 : 2));
+  const dpr = useMemo<[number, number]>(() => [1, tope], [tope]);
   return (
     <Canvas
       camera={{ position: [0, 0, 3.7], fov: 36 }}
-      dpr={[1, 2]}
+      dpr={dpr}
       frameloop={props.activo ? "always" : "never"}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       aria-hidden="true"
     >
+      <PerformanceMonitor onDecline={() => setTope(1)} />
       <Escena {...props} />
     </Canvas>
   );
@@ -70,7 +77,7 @@ function Escena({ tles, puntos, aceleracion, quieto, onEstado }: Props) {
 
   return (
     <>
-      <Stars radius={80} depth={40} count={2600} factor={3.2} saturation={0} fade speed={quieto ? 0 : 0.4} />
+      <Stars radius={80} depth={40} count={liviano() ? 1200 : 2600} factor={3.2} saturation={0} fade speed={quieto ? 0 : 0.4} />
       <ambientLight intensity={0.25} />
       <directionalLight position={[SOL.x * 5, SOL.y * 5, SOL.z * 5]} intensity={2.2} />
       <group ref={inclinacion} rotation={[baseX, 0, 0]}>
@@ -90,15 +97,17 @@ function Escena({ tles, puntos, aceleracion, quieto, onEstado }: Props) {
 const SOL = new THREE.Vector3(-0.55, 0.35, 0.76).normalize();
 
 function Tierra() {
+  const max = useThree((s) => s.gl.capabilities.maxTextureSize);
   const [dia, noche, relieve] = useLoader(THREE.TextureLoader, [
-    "/tierra/dia.webp",
+    !liviano() && max >= 4096 ? "/tierra/dia-4k.webp" : "/tierra/dia.webp",
     "/tierra/noche.webp",
     "/tierra/relieve.webp",
   ]);
+  const anis = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
   const material = useMemo(() => {
     dia.colorSpace = THREE.SRGBColorSpace;
     noche.colorSpace = THREE.SRGBColorSpace;
-    for (const t of [dia, noche, relieve]) t.anisotropy = 8;
+    for (const t of [dia, noche, relieve]) t.anisotropy = Math.min(8, anis);
     return new THREE.ShaderMaterial({
       uniforms: { dia: { value: dia }, noche: { value: noche }, relieve: { value: relieve }, sol: { value: SOL } },
       vertexShader: /* glsl */ `
