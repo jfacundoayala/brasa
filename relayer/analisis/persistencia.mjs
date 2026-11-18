@@ -43,7 +43,7 @@ const persistentes = new Set(orden.filter((x) => x[1].dias.size >= 10).map((x) =
 
 // 2) Regla de brasa por día: alta confianza, cruce a 2 km, mínimo 2 por satélite.
 const dias = [...new Set([...n20, ...n21].map((f) => f.acq_date))].sort();
-let dispara = 0, cruzTot = 0, cruzPersist = 0, soloPersist = 0;
+let libera = 0, cruzTot = 0, cruzPersist = 0, soloPersist = 0;
 const hist = [];
 for (const d of dias) {
   const A = n20.filter((f) => f.acq_date === d && esAltaConfianza(f));
@@ -52,7 +52,7 @@ for (const d of dias) {
   const ca = A.filter((p) => cerca(p, B)), cb = B.filter((p) => cerca(p, A));
   const ok = ca.length >= 2 && cb.length >= 2;
   if (ok) {
-    dispara++;
+    libera++;
     hist.push(Math.min(ca.length, cb.length));
     const enP = [...ca, ...cb].filter((f) => persistentes.has(celda(f))).length;
     cruzTot += ca.length + cb.length; cruzPersist += enP;
@@ -61,10 +61,10 @@ for (const d of dias) {
   }
 }
 hist.sort((a, b) => a - b);
-console.log(`\nDías con datos: ${dias.length}. Días que cumplen la regla de brasa: ${dispara}.`);
+console.log(`\nDías con datos: ${dias.length}. Días que cumplen la regla de brasa: ${libera}.`);
 console.log(`Focos cruzados en esos días: ${cruzTot}; en celdas persistentes (10 días o más): ${cruzPersist}.`);
 console.log(`Días que solo cumplen la regla gracias a celdas persistentes: ${soloPersist}.`);
-console.log(`Focos cruzados por día de disparo (el menor de los dos): mínimo ${hist[0]}, mediana ${hist[Math.floor(hist.length / 2)]}, máximo ${hist.at(-1)}.`);
+console.log(`Focos cruzados por día en que se cumple la regla (el menor de los dos): mínimo ${hist[0]}, mediana ${hist[Math.floor(hist.length / 2)]}, máximo ${hist.at(-1)}.`);
 // 3) Lugares conocidos: refinería de Campo Durán (aprox. -22.20, -63.66)
 for (const [nombre, la, lo] of [["Campo Durán (refinería)", -22.2, -63.66], ["Ingenio El Tabacal", -23.25, -64.25], ["Ingenio San Isidro", -24.73, -65.03]]) {
   const cercaDe = [...n20, ...n21].filter((f) => distanciaKm(la, lo, Number(f.latitude), Number(f.longitude)) <= 5);

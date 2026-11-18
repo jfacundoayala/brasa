@@ -74,7 +74,7 @@ npm run instalar
 npm test
 ```
 
-Son 100 tests: 62 del contrato y 38 del oráculo.
+Son 154 tests: 116 del contrato y 38 del oráculo.
 
 ## Comandos de la federación
 

@@ -2,11 +2,11 @@
 
 El contrato pasó por varias rondas de revisión antes de la entrega, propias y con herramientas de análisis externas. Cada hallazgo corregido quedó cubierto por un test que corre en cada cambio.
 
-Las medidas de seguridad y cómo avisar de un problema están en [`../../SECURITY.md`](../../SECURITY.md).
+Las medidas de seguridad y cómo avisar de un problema están en [`../../SECURITY.md`](../../SECURITY.md). Qué frena cada ataque: [`MODELO-DE-AMENAZAS.md`](MODELO-DE-AMENAZAS.md).
 
 ## Cómo se revisa cada cambio
 
-- **100 tests automáticos** en cada pull request: 62 del contrato y 38 del oráculo.
+- **154 tests automáticos** en cada pull request: 116 del contrato y 38 del oráculo.
 - **Búsqueda de claves privadas** en cada cambio, en la computadora y en el CI.
 - **Web:** revisión de tipos y compilación completa.
 - **Enlaces de la documentación** revisados en cada cambio.

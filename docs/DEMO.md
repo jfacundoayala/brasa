@@ -6,8 +6,8 @@ Para recorrer brasa en 3 minutos y comprobar cada cosa que se muestra. Corre en 
 
 | Tiempo | Pantalla | Qué se ve | Cómo comprobarlo |
 |---|---|---|---|
-| 0:00–0:25 | Portada de [brasafund.vercel.app](https://brasafund.vercel.app) | El problema: la ayuda llega tarde y quien dona no ve adónde fue | [`VALIDACION-BOMBEROS.md`](producto/VALIDACION-BOMBEROS.md) |
-| 0:25–0:50 | Los cuatro pasos | Detecta, calcula, envía y muestra | [`README.md`](../README.md#qué-hace) |
+| 0:00–0:25 | Portada de [brasafund.vercel.app](https://brasafund.vercel.app) | La Tierra con los dos satélites de la NASA en órbita y la frase del producto | [`web/lib/orbita.ts`](../web/lib/orbita.ts): órbitas calculadas con los elementos públicos de NOAA-20 y NOAA-21 |
+| 0:25–0:50 | Las cuatro herramientas | Detecta, calcula, envía y deja todo trazable | [`README.md`](../README.md#cómo-funciona) |
 | 0:50–1:20 | Mapa | Los focos del día que confirmaron los dos satélites (VIIRS NOAA-20 y NOAA-21) | NASA FIRMS, misma fecha y zona |
 | 1:20–1:40 | Un incendio | La meta: `focos × 14 ha × 400 USD`, con la fuente de cada número | [`FORMULA-BRASA.md`](producto/FORMULA-BRASA.md) |
 | 1:40–2:00 | Donar | Una donación de 0,01 USDC en Fuji, con la comisión visible antes de confirmar | [Transacción de 0,01 USDC](https://build.avax.network/explorer/fuji/c-chain/tx/0x841e41303da62b7e79fcdf7708f7814f959317793fea60efca9b4a80785ac39c) |
@@ -21,7 +21,7 @@ node src/index.mjs verificar-hash \
   --datos sample-data/en-vivo-2026-11-12
 ```
 
-**Si falla la red:** el video ([youtu.be/Kv2nUGe9D3A](https://youtu.be/Kv2nUGe9D3A)) muestra el mismo recorrido, y `verificar-hash` funciona con los datos guardados en el repo.
+**Si falla la red:** el video ([youtu.be/Kv2nUGe9D3A](https://youtu.be/Kv2nUGe9D3A)) muestra el mismo recorrido con el diseño anterior, y `verificar-hash` funciona con los datos guardados en el repo.
 
 ## Preguntas difíciles
 
@@ -50,8 +50,8 @@ La federación de bomberos. Los satélites dicen dónde hay fuego, y la federaci
 **¿Por qué una comisión de 5 %?**
 Paga la detección con satélites, el cálculo de cuánto hace falta, el seguimiento de cada dólar y la difusión. Se ve antes de donar, el donante puede cubrirla para que llegue el 100 %, y 5 % es el tope fijo del contrato.
 
-**¿Es legal? ¿Son un proveedor de activos virtuales (PSAV)?**
-No. brasa no cambia, no custodia ni transfiere el dinero de nadie: el donante dona desde su billetera y el contrato reparte según una regla pública. brasa cobra solo la comisión por el servicio.
+**¿Son un proveedor de activos virtuales (PSAV)?**
+No. La plataforma no cambia, no custodia ni transfiere el dinero de nadie: el donante dona desde su billetera y el contrato reparte según una regla pública. El equipo de brasa cobra solo la comisión por el servicio.
 *Prueba:* [`POSICION-PSAV-Y-FONDOS.md`](legal/POSICION-PSAV-Y-FONDOS.md).
 
 **¿Sirve solo para Salta?**

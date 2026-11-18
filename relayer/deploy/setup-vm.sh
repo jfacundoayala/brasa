@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prepara una VM Ubuntu 24.04 de Oracle Cloud para Brasa (pasos 4 a 10 de docs/futuro/ORACLE-PASO-A-PASO.md).
+# Prepara una VM Ubuntu 24.04 de Oracle Cloud para brasa (pasos 4 a 10 de docs/futuro/ORACLE-PASO-A-PASO.md).
 # Uso, dentro de la VM y con el repo ya clonado en ~/brasa:
 #   bash ~/brasa/relayer/deploy/setup-vm.sh
 # No pide ni guarda claves de oráculo. MAP_KEY es opcional: si falta, la web usa los datos guardados.

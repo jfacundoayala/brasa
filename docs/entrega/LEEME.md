@@ -20,7 +20,7 @@ Todo lo que se entrega, en un solo lugar.
 
 | Carpeta | Qué tiene |
 |---|---|
-| [`contracts/`](../../contracts) | El contrato `BrasaFund` y sus 62 tests |
+| [`contracts/`](../../contracts) | El contrato `BrasaFund` y sus 116 tests |
 | [`relayer/`](../../relayer) | El oráculo que lee los datos de la NASA y firma, con 38 tests |
 | [`web/`](../../web) | La web publicada |
 | [`relayer/sample-data/`](../../relayer/sample-data) | Los datos de la NASA usados en cada pago |

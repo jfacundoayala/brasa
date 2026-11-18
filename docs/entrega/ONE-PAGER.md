@@ -30,7 +30,7 @@ Los satélites no tienen fronteras: **NASA FIRMS cubre todo el planeta, gratis**
 
 ## Por qué blockchain, y no una base de datos común
 En una base de datos, quien la administra puede cambiar la regla, mover el dinero o borrar el historial. El donante tiene que creerle. Acá:
-- **No hay función para sacar el fondo a una dirección cualquiera:** solo cobran damnificados con credencial y cuarteles asignados al incendio. Hoy la credencial y la asignación las da una wallet del equipo. Paso siguiente: que las dé la federación de bomberos.
+- **No hay función para sacar el fondo a una dirección cualquiera:** solo cobran damnificados con credencial y cuarteles asignados al incendio. Hoy la credencial y la asignación las da una billetera del equipo. Paso siguiente: que las dé la federación de bomberos.
 - **La regla es pública y no se cambia en silencio:** cualquiera puede leerla para recalcular la meta.
 - **El dato es verificable:** cada reporte guarda la huella del dato de NASA. Cualquiera la verifica con `verificar-hash`.
 - **Si el dato miente,** hay límites: dos satélites que vean fuego en el mismo lugar, dos firmas, mínimo de 2 focos cruzados, la meta como techo de cada pago, 12 h entre liberaciones. Un mismo dato no paga dos veces.
@@ -41,7 +41,7 @@ En una base de datos, quien la administra puede cambiar la regla, mover el diner
 - Con datos en vivo, **los dos oráculos se niegan a firmar si hay menos de 2 focos cruzados**: la regla funciona.
 - **La regla ya pagó en vivo (12/11, versión anterior del contrato):** dos satélites de la NASA confirmaron 10 focos. Los dos oráculos firmaron por separado. El contrato envió 9,5 USDC a dos cuarteles y a la asistencia de damnificados. La huella de los datos coincide.
 - **USDC es el dinero que llega; AVAX es el combustible:** cada operación paga su gas en AVAX, la moneda de Avalanche. Cuesta centavos.
-- 100 tests en verde: 62 del contrato, 38 del oráculo. Web en **brasafund.vercel.app**: mapa con incendios de nivel 1, 2 y 3. Al tocar uno muestra cuánto hace falta, en USDC y en pesos, con el cuartel de referencia. Donación desde la web, con la comisión visible antes de confirmar.
+- 154 tests en verde: 116 del contrato, 38 del oráculo. Web en **brasafund.vercel.app**: mapa con incendios de nivel 1, 2 y 3. Al tocar uno muestra cuánto hace falta, en USDC y en pesos, con el cuartel de referencia. Donación desde la web, con la comisión visible antes de confirmar.
 
 ## A quién le sirve (y por qué lo va a pedir)
 - **Bomberos voluntarios y brigadas:** cobran cuando el fuego está confirmado, no días después. Cada pago les queda anotado para rendir cuentas.
@@ -59,12 +59,12 @@ En una base de datos, quien la administra puede cambiar la regla, mover el diner
 - **Quién cobra:** solo el cuartel que la federación asigna al incendio. Así el fondo paga a quien combate.
 - **Datos:** dos satélites de la NASA confirman cada foco. Paso siguiente: sumar un segundo proveedor de datos satelitales.
 - **Velocidad:** el dinero sale **en segundos desde que el dato llega a la cadena**. Paso siguiente: bajar a menos de 1 hora la demora de FIRMS, hoy de unas 3 horas.
-- **Seguridad:** código público y verificable, con 100 tests en verde. Auditoría externa en el roadmap (ver [`LEEME.md`](../seguridad/LEEME.md)).
+- **Seguridad:** código público y verificable, con 154 tests en verde. Auditoría externa en el roadmap (ver [`LEEME.md`](../seguridad/LEEME.md)).
 - **Lo que sigue:** red principal con la federación de bomberos y pago por tramos contra comprobantes.
 
 ## Hacia dónde va
 Salta → NOA y NEA → Argentina → Latinoamérica → **el mundo**. Las mismas reglas públicas, con una red de oráculos de varios operadores independientes.
 
 **Ayuda a tiempo, recursos a la vista: eso es brasa.**
-*Datos: NASA FIRMS, GOES-19 (INPE), Open-Meteo, OpenStreetMap · Hecho en Chaco por Juan Facundo Ayala y Gastón Persoglia.*
+*Datos: NASA FIRMS, GOES-19 (INPE), Open-Meteo, Esri World Imagery, AWS Terrain Tiles · Hecho en Chaco por Juan Facundo Ayala y Gastón Persoglia.*
 *Web: brasafund.vercel.app · Código: github.com/jfacundoayala/brasa*

@@ -1,4 +1,4 @@
-// Relayer de Brasa.
+// Relayer de brasa.
 //
 //   node src/index.mjs preparar            Arma web/public/focos.json con los focos para el mapa (datos guardados o --live).
 //   node src/index.mjs reportar            Cuenta focos, firma dos reportes (dos sensores) y llama a reportFire (las DOS claves en un solo proceso: solo demo).

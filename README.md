@@ -6,7 +6,7 @@
 
 **La propuesta.** Decidir antes del incendio cuánto se paga, cuándo y a quién, escribirlo en un contrato público y dejar que los datos de la NASA lo activen.
 
-<a href="https://brasafund.vercel.app"><img src="docs/img/readme/portada.png" alt="brasa: con satélites de la NASA detecta cada incendio, calcula cuánto cuesta combatirlo y envía la donación sin intermediarios a bomberos y damnificados." width="100%"></a>
+<a href="https://brasafund.vercel.app"><img src="docs/img/readme/portada.png" alt="Con satélites de la NASA, brasa detecta cada incendio, calcula cuánto cuesta combatirlo y envía la donación sin intermediarios a bomberos y damnificados." width="100%"></a>
 
 **Hackathon Argentina Space 2026** · Track Avalanche · Geoespacial · Prototipo en Avalanche Fuji, con USDC de prueba y datos reales de NASA FIRMS.
 
@@ -31,14 +31,14 @@
 **Resultados:**
 - **Pago en vivo del 12/11:** los dos satélites confirmaron 10 focos, y la meta fue de 44.800 USD con la regla del contrato v2, de 320 USD por hectárea. El fondo tenía 9,5 USDC y los pagó en una transacción: 8,075 a dos cuarteles y 1,425 a la asistencia.
 - **Huella:** `verificar-hash` recalcula el `dataHash` de ese pago a partir de los datos guardados en el repo y da **COINCIDE**.
-- **Tests:** 100 en verde, 62 del contrato y 38 del oráculo. Corren en cada cambio, junto con una búsqueda de claves privadas.
+- **Tests:** 154 en verde, 116 del contrato y 38 del oráculo. Corren en cada cambio, junto con una búsqueda de claves privadas.
 
 ## Por qué blockchain
 
 | Pregunta del track | Respuesta |
 |---|---|
 | ¿Quién desconfía de quién? | El donante no sabe si su aporte llegó a quien apaga el fuego. El cuartel no sabe cuándo ni cuánto va a recibir. |
-| ¿Qué evento dispara algo en la cadena? | Dos reportes firmados, uno por satélite, que confirman el mismo fuego. `reportFire` calcula la meta y paga en la misma transacción. |
+| ¿Qué evento libera el pago en la cadena? | Dos reportes firmados, uno por satélite, que confirman el mismo fuego. `reportFire` calcula la meta y paga en la misma transacción. |
 | ¿Qué pasa si el dato miente? | Tienen que coincidir dos satélites y dos firmas, y un mismo dato paga una sola vez. La meta funciona como techo y hay 12 h entre pagos. La huella queda guardada, y cualquiera puede comprobar después qué dato se usó. |
 | ¿Quién paga y quién cobra? | Pagan los donantes, desde cualquier país y desde 0,01 USDC. Cobran los cuarteles asignados y la asistencia a damnificados. La comisión de 5 % es fija en el contrato y queda a la vista. |
 
@@ -50,7 +50,7 @@ Con Node 22, sin claves ni `.env`:
 
 ```bash
 npm run instalar        # dependencias de contracts, relayer y web
-npm test                # 62 tests del contrato (Hardhat 3) y 38 del oráculo
+npm test                # 116 tests del contrato (Hardhat 3) y 38 del oráculo
 ```
 
 Verificar el pago en vivo con los datos guardados:
@@ -110,14 +110,15 @@ flowchart LR
 ## Estructura
 
 ```
-contracts/   BrasaFund.sol, 62 tests y scripts de despliegue, donación y asignación (Hardhat 3)
+contracts/   BrasaFund.sol, 116 tests y scripts de despliegue, donación y asignación (Hardhat 3)
 relayer/     el oráculo
   src/         firms.mjs (baja y filtra FIRMS), incendios.mjs (cruza los satélites),
                reporte.mjs (firma EIP-712), verificar.mjs (huella), index.mjs (comandos)
   sample-data/ focos reales guardados, incluidos los del pago en vivo
   deploy/      cómo correrlo en un servidor
 web/         Next.js + MapLibre + React Three Fiber + ethers
-  lib/         formula.ts (meta por incendio), goes.ts (avisos GOES-19), cuarteles.ts, zonas.ts
+  lib/         formula.ts (meta por incendio), goes.ts (avisos GOES-19), cuarteles.ts, zonas.ts,
+               orbita.ts (órbitas de NOAA-20 y NOAA-21)
 docs/        producto, técnico, seguridad, legal, presentación e identidad
 .github/     tests y búsqueda de claves en cada cambio; actualización de datos de la NASA
 ```
@@ -133,7 +134,7 @@ docs/        producto, técnico, seguridad, legal, presentación e identidad
 
 ## Equipo
 
-[Juan Facundo Ayala](https://github.com/jfacundoayala) y [Gastón Persoglia](https://github.com/grancobud). Hecho en Chaco, Argentina. Usamos Claude Code como asistente de programación.
+[Juan Facundo Ayala](https://github.com/jfacundoayala) y [Gastón Persoglia](https://github.com/grancobud). Hecho en Chaco, Argentina. Usamos asistentes de programación con IA.
 
 ## Licencia y atribuciones
 
