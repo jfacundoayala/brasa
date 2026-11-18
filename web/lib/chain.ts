@@ -99,9 +99,40 @@ export function explorerBase(d: Deployment): string {
 export const txUrl = (d: Deployment, h: string) => (explorerBase(d) ? `${explorerBase(d)}/tx/${h}` : "");
 export const addrUrl = (d: Deployment, a: string) => (explorerBase(d) ? `${explorerBase(d)}/address/${a}` : "");
 
+// Core es la billetera de Avalanche. Si está instalada se usa esa, aunque haya otra que también ocupe window.ethereum.
+const CORE_RDNS = "app.core.extension";
+type Anuncio = { info: { rdns: string; name: string }; provider: Eip1193Provider };
+let core: Eip1193Provider | null = null;
+let escuchando = false;
+
+/** Pide a las billeteras instaladas que se presenten (EIP-6963). Responden en el mismo momento. */
+function buscarCore() {
+  if (typeof window === "undefined") return;
+  if (!escuchando) {
+    escuchando = true;
+    window.addEventListener("eip6963:announceProvider", (ev) => {
+      const d = (ev as CustomEvent<Anuncio>).detail;
+      if (d?.info?.rdns === CORE_RDNS && typeof d.provider?.request === "function") core = d.provider;
+    });
+  }
+  if (!core) window.dispatchEvent(new Event("eip6963:requestProvider"));
+}
+
 export function getEth(): Eip1193Provider | null {
-  const e = (globalThis as unknown as { ethereum?: Eip1193Provider }).ethereum;
+  buscarCore();
+  if (core) return core;
+  const g = globalThis as unknown as { avalanche?: Eip1193Provider; ethereum?: Eip1193Provider };
+  // Core también se publica en window.avalanche.
+  const e = typeof g.avalanche?.request === "function" ? g.avalanche : g.ethereum;
   return e && typeof e.request === "function" ? e : null;
+}
+
+/** true si la billetera que se va a usar es Core. */
+export function esCore(): boolean {
+  const e = getEth();
+  if (!e) return false;
+  const g = globalThis as unknown as { avalanche?: Eip1193Provider };
+  return e === core || e === g.avalanche || (e as { isAvalanche?: boolean }).isAvalanche === true;
 }
 
 export async function switchTo(d: Deployment) {
