@@ -40,3 +40,5 @@ datos-reportes/
 .claude/
 docs/equipo/
 docs/identidad/propuestas/
+# worker de MapLibre (se copia en predev/prebuild)
+web/public/maplibre-gl-worker.mjs
