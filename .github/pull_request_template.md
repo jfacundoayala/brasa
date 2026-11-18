@@ -9,5 +9,5 @@
 - [ ] Revisado en el navegador (celular y escritorio), si toca la web
 
 ## Seguridad
-- [ ] Sin claves, `.env` ni wallets en el diff (`git diff --cached`)
+- [ ] Sin claves, `.env` ni billeteras en el diff (`git diff --cached`)
 - [ ] Si toca `contracts/contracts/`, lo revisa Gastón

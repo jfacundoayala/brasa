@@ -66,7 +66,7 @@ Además, la RG 1172/2026 deja afuera, en forma expresa (art. 2°):
 | Federación de bomberos | La federación provincial (en Salta, la que nuclea a los cuarteles voluntarios) | Acreditar cuarteles y entidades, revocar credenciales, auditar la rendición de gastos | Mover el fondo, cambiar la regla, firmar que hay fuego |
 | Oráculos | Dos operadores de datos independientes | Firmar que dos satélites vieron fuego | Elegir quién cobra, mover el fondo |
 | Cuartel | La asociación civil de bomberos voluntarios | Cobrar lo que le toca, rendir cómo lo usó | Acreditarse solo |
-| brasa | El equipo | Mantener el software y cobrar la comisión por el servicio | Mover el fondo, acreditar, firmar que hay fuego |
+| La plataforma | El equipo | Mantener el software y cobrar la comisión por el servicio | Mover el fondo, acreditar, firmar que hay fuego |
 | Donante | Cualquier persona del mundo | Donar desde su billetera y seguir su donación | Recuperar lo donado o desviarlo |
 
 **Qué controla la federación antes de acreditar un cuartel (sí o sí)**

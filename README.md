@@ -14,7 +14,7 @@
 
 ## Links
 
-- **Web en vivo:** [brasafund.vercel.app](https://brasafund.vercel.app). Muestra el mapa con los focos de Salta del día, la meta de cada incendio con la fuente de cada número, el fondo y la donación desde la billetera. La explicación técnica está en [`/fundamentos`](https://brasafund.vercel.app/fundamentos).
+- **Web en vivo:** [brasafund.vercel.app](https://brasafund.vercel.app). Muestra el mapa con los últimos focos de Salta que vio la NASA, la meta de cada incendio con la fuente de cada número, el fondo y la donación desde la billetera. La explicación técnica está en [`/fundamentos`](https://brasafund.vercel.app/fundamentos).
 - **Contrato:** `BrasaFund` [`0x96b9…6057`](https://build.avax.network/explorer/fuji/c-chain/address/0x96b950d62Cae3eE39c5325144c78d0CBDA9d6057) en Avalanche Fuji (43113), con el código [verificado en Sourcify](https://sourcify.dev/server/repo-ui/43113/0x96b950d62Cae3eE39c5325144c78d0CBDA9d6057).
 - **Pago en vivo, 12/11/2026:** [dos firmas, una por satélite, y el pago en la misma transacción](https://build.avax.network/explorer/fuji/c-chain/tx/0xd35e6748a10d21081a05998893f4b3d8d2f42d2d89d438bcd22944d7edded4a3). Todas las transacciones están en [`DIRECCIONES.md`](docs/tecnico/DIRECCIONES.md).
 - **Video:** [youtu.be/Kv2nUGe9D3A](https://youtu.be/Kv2nUGe9D3A).
