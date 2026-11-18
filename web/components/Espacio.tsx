@@ -17,7 +17,8 @@ const coord = (v: number, pos: string, neg: string) => `${fmt(Math.abs(v))}° ${
 function hayWebgl(): boolean {
   try {
     const c = document.createElement("canvas");
-    return !!(c.getContext("webgl2") || c.getContext("webgl"));
+    // three ya no dibuja con WebGL 1
+    return !!c.getContext("webgl2");
   } catch {
     return false;
   }
