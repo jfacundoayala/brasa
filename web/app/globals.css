@@ -815,3 +815,8 @@ body { font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", Robo
   .espacio-texto { gap: 16px; }
   .marca { font-size: clamp(4rem, 22vw, 6.5rem); }
 }
+
+.mapa.sin-mapa { height: auto; min-height: 0; padding: 20px; overflow: auto; }
+.mapa.sin-mapa ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.mapa.sin-mapa button { width: 100%; min-height: 44px; padding: 10px 14px; text-align: left; font: inherit; color: inherit; background: rgba(255, 255, 255, .05); border: 1px solid var(--borde); border-radius: 10px; cursor: pointer; }
+.mapa.sin-mapa button:hover, .mapa.sin-mapa button.elegido { border-color: var(--brasa, #FF5A1F); }

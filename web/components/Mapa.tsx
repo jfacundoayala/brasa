@@ -67,6 +67,8 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
   // El mapa no "atrapa" la ruedita ni el dedo hasta que lo tocás: así la página baja normal.
   const [activo, setActivo] = useState(false);
   const [aviso, setAviso] = useState(false);
+  // Sin WebGL 2 no hay mapa: los incendios se muestran en una lista para poder abrirlos igual.
+  const [sinMapa, setSinMapa] = useState(false);
   const tactil = useRef(false);
   const el = useRef<HTMLDivElement>(null);
   const cb = useRef({ onFoco, onIncendio, onZona });
@@ -86,18 +88,23 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
       const [w, s, e, n] = focos.zona.bbox;
       tactil.current = window.matchMedia("(pointer: coarse)").matches;
       const centro: [number, number] = [(w + e) / 2, (s + n) / 2];
-      map = new ml.Map({
-        container: el.current,
-        style: ESTILO,
-        center: centro,
-        zoom: 1.6,
-        pitch: 0,
-        maxPitch: 75,
-        scrollZoom: false,
-        dragPan: !tactil.current,
-        attributionControl: { compact: true },
-        canvasContextAttributes: { antialias: true },
-      });
+      try {
+        map = new ml.Map({
+          container: el.current,
+          style: ESTILO,
+          center: centro,
+          zoom: 1.6,
+          pitch: 0,
+          maxPitch: 75,
+          scrollZoom: false,
+          dragPan: !tactil.current,
+          attributionControl: { compact: true },
+          canvasContextAttributes: { antialias: true },
+        });
+      } catch {
+        setSinMapa(true);
+        return;
+      }
       map.addControl(new ml.NavigationControl({ visualizePitch: true }), "top-right");
       map.addControl(new ml.FullscreenControl(), "top-right");
       const m = map;
@@ -202,6 +209,24 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
     const t = setTimeout(() => setAviso(false), 1800);
     return () => clearTimeout(t);
   }, [aviso]);
+
+  if (sinMapa) {
+    const lista = focos?.incendios ?? [];
+    return (
+      <div className="mapa sin-mapa">
+        <p>Tu navegador no puede dibujar el mapa. {lista.length ? "Estos son los incendios de hoy:" : "Hoy no hay incendios confirmados."}</p>
+        <ul>
+          {lista.map((x, i) => (
+            <li key={x.id}>
+              <button type="button" className={seleccionado === i ? "elegido" : undefined} onClick={() => onIncendio(i)}>
+                Incendio {x.id}: {GRAVEDAD[x.nivel]}, ~{x.areaHa} ha
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 
   return (
     <div
