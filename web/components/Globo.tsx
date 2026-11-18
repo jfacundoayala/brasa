@@ -240,6 +240,8 @@ function Satelite({ tle, principal, aceleracion, onEstado }: { tle: Tle; princip
   const orbita = useRef<THREE.Group>(null);
   const haz = useRef<THREE.Mesh>(null);
   const ultimoAviso = useRef(0);
+  // Reloj propio: el del renderer vuelve a cero cada vez que el globo se pausa.
+  const reloj = useRef(0);
   const brillo = useBrillo();
   const centro = useMemo(() => new THREE.Vector3(), []);
   const color = principal ? "#FFB000" : "#7cc4ff";
@@ -252,8 +254,9 @@ function Satelite({ tle, principal, aceleracion, onEstado }: { tle: Tle; princip
     return g;
   }, []);
 
-  useFrame(({ clock }) => {
-    const ahora = new Date(inicio + clock.elapsedTime * 1000 * aceleracion);
+  useFrame((_, dt) => {
+    reloj.current += Math.min(dt, 0.1);
+    const ahora = new Date(inicio + reloj.current * 1000 * aceleracion);
     const e = estado(s, ahora);
     if (!e || !sat.current) return;
     sat.current.position.set(...e.pos);
@@ -267,8 +270,8 @@ function Satelite({ tle, principal, aceleracion, onEstado }: { tle: Tle; princip
       const obj = sobreSalta ? 0.28 : 0.08;
       m.opacity += (obj - m.opacity) * 0.08;
     }
-    if (onEstado && clock.elapsedTime - ultimoAviso.current > 0.25) {
-      ultimoAviso.current = clock.elapsedTime;
+    if (onEstado && reloj.current - ultimoAviso.current > 0.25) {
+      ultimoAviso.current = reloj.current;
       onEstado({ ...e, nombre: tle.nombre, sobreSalta });
     }
   });
