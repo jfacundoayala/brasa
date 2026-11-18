@@ -33,6 +33,7 @@ import { CONF_NAME, SENSOR_COLOR, SENSOR_NAME } from "./Mapa";
 import Logo from "./Logo";
 import { IcoCalculo, IcoCandado, IcoCuartel, IcoDonar, IcoExterno, IcoLupa, IcoSatelite, IcoVerificado } from "./Iconos";
 import Foto from "./Foto";
+import Espacio from "./Espacio";
 import { Gravedad, LLAMA_ADENTRO, LLAMA_AFUERA } from "./Llamas";
 import { cuartelCercano } from "@/lib/cuarteles";
 import { AMBIENTE, DEPTOS, RADIO_KM, canchas, departamentoDe, genteCerca } from "@/lib/zonas";
@@ -323,6 +324,7 @@ export default function Brasa() {
   const redName = dep ? (dep.chainId === 43113 ? "Avalanche Fuji" : `red local (${dep.chainId})`) : "";
 
   const nInc = focos?.incendios?.length ?? 0;
+  const puntosGlobo = useMemo(() => (focos?.incendios ?? []).map((x) => ({ lat: x.lat, lon: x.lon, nivel: x.nivel })), [focos]);
   const enVivo = ver === "vivo" && !!focos && !focos.datosGuardados;
   // Si la última detección tiene más de 6 h, no se dice "hoy": se muestra la fecha del dato.
   const detViejo =
@@ -380,8 +382,8 @@ export default function Brasa() {
           </nav>
         </div>
       </header>
-    <main>
-      <p className="lema">Ayuda a tiempo, recursos a la vista.</p>
+      <Espacio puntos={puntosGlobo} enVivo={enVivo} />
+    <main id="inicio">
 
       <section className="hero" aria-label="Qué está pasando">
         <div className="hero-texto">
@@ -859,7 +861,7 @@ export default function Brasa() {
             )}
             <p className="mini">
               Fuentes: NASA FIRMS (satélites NOAA-20, NOAA-21 y MODIS), GOES-19 (NOAA) por el programa Queimadas del INPE,
-              OpenStreetMap, geoBoundaries (IGN) y Censo 2022 (INDEC).
+              Esri World Imagery, AWS Terrain Tiles, geoBoundaries (IGN) y Censo 2022 (INDEC).
             </p>
           </details>
         </section>
@@ -1382,7 +1384,7 @@ export default function Brasa() {
             <b>Datos</b>
             <span>Focos: NASA FIRMS (VIIRS)</span>
             <span>Aviso rápido: GOES-19 (INPE)</span>
-            <span>Mapa: © OpenStreetMap</span>
+            <span>Mapa: Esri World Imagery</span>
             <span>Red: Avalanche Fuji</span>
           </div>
         </div>

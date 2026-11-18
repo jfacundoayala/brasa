@@ -116,7 +116,7 @@ relayer/     el oráculo
                reporte.mjs (firma EIP-712), verificar.mjs (huella), index.mjs (comandos)
   sample-data/ focos reales guardados, incluidos los del pago en vivo
   deploy/      cómo correrlo en un servidor
-web/         Next.js + Leaflet + ethers
+web/         Next.js + MapLibre + React Three Fiber + ethers
   lib/         formula.ts (meta por incendio), goes.ts (avisos GOES-19), cuarteles.ts, zonas.ts
 docs/        producto, técnico, seguridad, legal, presentación e identidad
 .github/     tests y búsqueda de claves en cada cambio; actualización de datos de la NASA
@@ -139,4 +139,4 @@ docs/        producto, técnico, seguridad, legal, presentación e identidad
 
 Código bajo licencia [MIT](LICENSE). El nombre "brasa" y el logo no están incluidos en la licencia.
 
-Focos: NASA FIRMS (LANCE). Alerta temprana: GOES-19 (NOAA), vía el programa Queimadas del INPE. Clima: Open-Meteo. Mapa: © OpenStreetMap. Límite de Salta: geoBoundaries (CC BY 2.5).
+Focos: NASA FIRMS (LANCE). Alerta temprana: GOES-19 (NOAA), vía el programa Queimadas del INPE. Clima: Open-Meteo. Mapa: imagen satelital Esri World Imagery, relieve AWS Terrain Tiles (Mapzen). Tierra 3D: NASA Blue Marble. Órbitas: TLE de NORAD (SGP4, satellite.js). Límite de Salta: geoBoundaries (CC BY 2.5).
