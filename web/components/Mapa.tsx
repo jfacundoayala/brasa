@@ -250,7 +250,7 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
       className="mapa-caja"
       // Con el dedo se activa con un toque (clic), no al empezar a deslizar: así la página sigue bajando.
       onPointerDown={(e) => e.pointerType !== "touch" && setActivo(true)}
-      onClick={() => setActivo(true)}
+      onClickCapture={() => setActivo(true)}
       onMouseLeave={() => !tactil.current && setActivo(false)}
       onWheel={() => !activo && setAviso(true)}
     >
