@@ -40,7 +40,11 @@ jobs:
         run: |
           npm ci
           npx hardhat compile
+          # Primero contra el bytecode que se despliega: la corrida de cobertura usa uno instrumentado
+          # y sin límite de tamaño de contrato.
           npx hardhat test
+          npm run test:coverage
+          npm run test:scripts
       - name: Relayer
         working-directory: relayer
         run: |
