@@ -32,13 +32,11 @@ deployment.json
 # Entrevistas reales (datos personales): nunca al repo
 docs/entrevistas/
 
-# Locales: herramientas y salidas del buzón
+# Archivos locales
 .claude-flow/
-datos-reportes/
-
-# Herramientas locales
 .claude/
 docs/equipo/
 docs/identidad/propuestas/
+datos-reportes/
 # worker de MapLibre (se copia en predev/prebuild)
 web/public/maplibre-gl-worker.mjs

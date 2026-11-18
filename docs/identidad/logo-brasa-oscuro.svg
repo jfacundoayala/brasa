@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 120" role="img" aria-label="Brasa (fondo oscuro)">
-  <title>Brasa</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 120" role="img" aria-label="brasa (fondo oscuro)">
+  <title>brasa</title>
   <g transform="translate(10,8) scale(1.04)">
     <path d="M53 4 C53 21 77 30 78 55 C79 75 66 90 50 90 C34 90 21 77 22 59 C23 47 30 40 35 30 C37 38 41 42 46 42 C43 29 46 14 53 4 Z" fill="#FF5A1F"/>
     <path d="M51 42 C55 53 66 58 66 71 C66 81 59 88 50 88 C41 88 34 81 34 72 C34 64 38 60 42 55 C43 60 46 63 48 63 C47 56 48 49 51 42 Z" fill="#FFB000"/><path d="M50 66 C53 71 58 73 58 79 C58 84 54.5 87 50 87 C45.5 87 42 84 42 79.5 C42 76 44 74 46 71.5 C46.5 74 48 75 49 75 C48.5 72 49 69 50 66 Z" fill="#FFE08A"/>

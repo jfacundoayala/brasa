@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Símbolo de Brasa">
-  <title>Símbolo de Brasa</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Símbolo de brasa">
+  <title>Símbolo de brasa</title>
   <rect width="120" height="120" rx="28" fill="#1B1512"/>
   <g transform="translate(10,12)">
     <path d="M53 4 C53 21 77 30 78 55 C79 75 66 90 50 90 C34 90 21 77 22 59 C23 47 30 40 35 30 C37 38 41 42 46 42 C43 29 46 14 53 4 Z" fill="#FF5A1F"/>

@@ -11,11 +11,11 @@
 - **Credenciales con demora pública:** una credencial nueva queda visible en la cadena antes de poder cobrar.
 - **Claves de firma con rotación controlada:** se cambian de a una, con propuesta pública y demora.
 - **Comisión con tope fijo:** `MAX_FEE_BPS = 500` (5 %), fija al desplegar.
-- **Contrato:** `ReentrancyGuard`, `SafeERC20`, parámetros de zona que no se pueden editar, 62 tests. Relayer: 38 tests.
+- **Contrato:** `ReentrancyGuard`, `SafeERC20`, parámetros de zona que no se pueden editar, 116 tests. Relayer: 38 tests.
 - **Claves fuera del repo:** `.gitignore` excluye `.env*`, claves y firmas. Un hook local (`.githooks/pre-commit`) y el CI (`.github/workflows/tests.yml`) buscan claves privadas en cada cambio. Ninguna clave de oráculo vive en un servidor ni en el CI.
 - **Dependencias con versión exacta** y lockfiles en `contracts/`, `relayer/` y `web/`.
 
-Qué se revisó y qué se corrigió en el contrato: [`docs/seguridad/LEEME.md`](docs/seguridad/LEEME.md).
+Qué se revisó y qué se corrigió en el contrato: [`docs/seguridad/LEEME.md`](docs/seguridad/LEEME.md). Qué frena cada ataque: [`docs/seguridad/MODELO-DE-AMENAZAS.md`](docs/seguridad/MODELO-DE-AMENAZAS.md).
 
 ## Hoy y paso siguiente
 
@@ -27,7 +27,7 @@ Qué se revisó y qué se corrigió en el contrato: [`docs/seguridad/LEEME.md`](
 | Cualquiera recalcula la huella de los datos de cada pago | Red de oráculos de varios operadores independientes |
 | Dos satélites de la NASA: VIIRS NOAA-20 y NOAA-21 | Un segundo proveedor de datos satelitales |
 | Filtro por zona, alta confianza y cruce de dos satélites | Capa de uso del suelo y registro de quemas autorizadas |
-| 100 tests automáticos y búsqueda de claves en cada cambio | Auditoría externa, fuzzing y análisis estático en el CI |
+| 154 tests automáticos y búsqueda de claves en cada cambio | Auditoría externa, fuzzing y análisis estático en el CI |
 
 Plan completo: [`docs/producto/roadmap.md`](docs/producto/roadmap.md).
 

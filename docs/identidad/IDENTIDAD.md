@@ -22,30 +22,35 @@ La plataforma brasa es **la vecina que organiza la colecta y lleva la planilla a
 **Alternativas:** "Donás hoy, llega cuando hace falta." · "El dinero de la comunidad, al cuartel de tu zona."
 
 ## 4. Logo
-**Idea:** una llama con una brasa ámbar adentro y un punto brillante arriba a la derecha, que es el satélite que avisa. Una sola figura, legible en tamaño de ícono.
+**Idea:** una llama en tres tonos, por los tres niveles de incendio, con el satélite que la detecta arriba a la derecha y el nombre escrito en Space Grotesk. Una sola figura, legible en tamaño de ícono.
 
 | Archivo | Uso |
 |---|---|
 | [`logo-brasa.svg`](logo-brasa.svg) | Logo completo con nombre, sobre fondo claro |
+| [`logo-brasa-oscuro.svg`](logo-brasa-oscuro.svg) | Logo completo con nombre, sobre fondo oscuro. Es el que usa la web |
 | [`simbolo-brasa.svg`](simbolo-brasa.svg) | Ícono cuadrado para la app, el favicon y las redes |
 
 ## 5. Colores
 | Nombre | Hex | Uso |
 |---|---|---|
-| Carbón | `#1B1512` | Fondos oscuros y texto |
-| Brasa | `#FF5A1F` | Color principal, botones y llama |
-| Ámbar | `#FFB000` | Acentos y la brasa interior |
-| Ceniza | `#F3EEE8` | Fondos claros |
-| Verde rendición | `#2E9E6B` | Solo para "rendido" y "verificado" |
+| Carbón | `#14110F` | Fondo de la página |
+| Noche | `#04060C` | Fondo de la portada, detrás de la Tierra |
+| Brasa | `#FF6A2B` | Color principal, botones y acentos. La llama del logo usa `#FF5A1F` |
+| Ámbar | `#FFB000` | Avisos. En el logo, la llama interior y el satélite |
+| Ceniza | `#FBF6EE` | Texto sobre fondo oscuro y fondos claros |
+| Hielo | `#7CC4FF` | El segundo satélite en la portada |
+| Verde | `#2E9E6B` | Solo para lo confirmado y lo verificado |
 
 Que el verde sea solo para cosas confirmadas ayuda a que la gente lo asocie con confianza.
 
 ## 6. Tipografía
-- **Títulos:** Space Grotesk, en negrita.
-- **Texto:** Inter.
-- Las dos son de Google Fonts.
+- **Logo y títulos:** Space Grotesk, en negrita.
+- **Texto:** Geist.
+- **Datos y números técnicos:** Geist Mono.
+- Las tres se sirven desde el propio sitio.
 
-## 7. Cómo se ve el tablero
-- Fondo Carbón, tarjetas en Ceniza.
-- **Un mapa de Argentina** con puntos de calor en ámbar y los cuarteles como puntos en color Brasa.
-- Cada movimiento de dinero lleva su sello: *donado*, *liberado*, *rendido* (verde).
+## 7. Cómo se ve la web
+- Fondo Carbón, con tarjetas apenas más claras.
+- **Portada** con la Tierra en 3D y los satélites NOAA-20 y NOAA-21 en órbita.
+- **Mapa satelital de Salta** con una llama por incendio: una, dos o tres según el nivel (leve, medio o grave).
+- Cada incendio lleva su sello: *confirmado por dos satélites* (verde) o *lo ve un solo satélite*.

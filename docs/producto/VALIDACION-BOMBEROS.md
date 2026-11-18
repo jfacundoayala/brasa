@@ -42,7 +42,7 @@ Dijo que 320 está bien y que 400 es mejor. Le propusimos subir la base a 400 US
 | Lo que escuchamos | Lo que hace brasa |
 |---|---|
 | El costo de un incendio grande no está cuantificado | La herramienta "Calcula" pone un número a cada incendio, con una regla pública y cada fuente a la vista |
-| Los bomberos salen en 5 a 10 minutos. Reponer mangueras y combustible depende del dinero que llegue después | El contrato libera el dinero en segundos, apenas dos satélites confirman el fuego |
+| Los bomberos salen en 5 a 10 minutos. Reponer mangueras y combustible depende del dinero que llegue después | El contrato libera el dinero en segundos desde que recibe las dos firmas que confirman el fuego |
 | 320 USD por hectárea está bien, 400 es mejor | El contrato v3 usa 400 USD por hectárea: 280 para el combate, 40 para logística, 80 para damnificados |
 | La temporada forestal va de mayo a noviembre | Es la ventana prevista para el piloto en Salta |
 | Un fondo así los ayudaría mucho | Quien recibe el dinero quiere la herramienta |

@@ -19,7 +19,7 @@ La plataforma brasa no hace ninguna de esas cinco cosas **para o en nombre de ot
 |---|---|---|
 | Cambiar cripto por pesos | No cambia nada. El donante llega con su USDC. El cuartel lo pasa a pesos con el proveedor que elija. | No hay ninguna función de cambio en el contrato ni en la web. |
 | Transferir por cuenta de otro | El donante transfiere desde **su propia billetera**, con su firma. La liberación la ejecuta el contrato según la regla. **Cualquiera** puede enviarla con las dos firmas de los oráculos: no hace falta brasa. | `donateToZone` y `donateToRecipient` usan `msg.sender`. `reportFire` no exige quién la llama (`BrasaFund.sol:432`). |
-| Custodiar o administrar | brasa no tiene llaves sobre el fondo. El contrato no tiene función de retiro. Los parámetros de cada zona no se pueden editar. | Test "la federación no tiene ninguna función para mover el fondo". |
+| Custodiar o administrar | La plataforma no tiene llaves sobre el fondo. El contrato no tiene función de retiro. Los parámetros de cada zona no se pueden editar. | Test "la federación no tiene ninguna función para mover el fondo". |
 | Control sobre los activos | Nadie puede sacar el saldo a mano: ni brasa, ni la federación, ni el donante. Solo sale por la regla pública. | Código verificado en Sourcify. |
 
 Además, la RG 1172/2026 deja afuera, en forma expresa (art. 2°):

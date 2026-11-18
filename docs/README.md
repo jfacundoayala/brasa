@@ -18,6 +18,7 @@ Todo lo que hace falta para entender brasa, comprobarlo y ver hacia dónde va.
 | Correrlo en local o desplegarlo en Fuji | [`tecnico/CORRER-EN-LOCAL.md`](tecnico/CORRER-EN-LOCAL.md) |
 | Saber por qué brasa no es un PSAV y de quién es el dinero | [`legal/POSICION-PSAV-Y-FONDOS.md`](legal/POSICION-PSAV-Y-FONDOS.md) |
 | Ver las medidas de seguridad y las revisiones del contrato | [`../SECURITY.md`](../SECURITY.md) y [`seguridad/`](seguridad/LEEME.md) |
+| Ver qué frena cada ataque | [`seguridad/MODELO-DE-AMENAZAS.md`](seguridad/MODELO-DE-AMENAZAS.md) |
 
 ## Carpetas
 
@@ -36,7 +37,7 @@ Fuera de `docs/`: [`relayer/sample-data/`](../relayer/sample-data/LEEME.md) tien
 
 ## Cómo trabajamos
 
-- Cada cambio entra por pull request, con 100 tests automáticos y una búsqueda de claves privadas.
+- Cada cambio entra por pull request, con 154 tests automáticos y una búsqueda de claves privadas.
 - Cada uno usa sus propias billeteras de prueba en su `.env.local`, que no se sube.
 - El hook que frena claves privadas se activa con `git config core.hooksPath .githooks`.
 - Antes de unir un cambio, desde la raíz: `npm test` (contrato y relayer) y `npm run enlaces`.
