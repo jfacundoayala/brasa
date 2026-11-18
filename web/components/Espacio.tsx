@@ -95,7 +95,7 @@ export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: b
               <div className="globo-cargando" aria-hidden="true" />
             )}
           </div>
-          {webgl && (
+          {webgl && tles?.length !== 0 && (
             <div className={`hud${sat?.sobreSalta ? " escaneando" : ""}`} role="status" aria-live="off">
               <p className="hud-tit">
                 <i aria-hidden="true" /> {sat?.nombre ?? "NOAA-20"}, órbita calculada
