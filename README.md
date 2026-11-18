@@ -10,6 +10,8 @@
 
 **Hackathon Argentina Space 2026** · Track Avalanche · Geoespacial · Prototipo en Avalanche Fuji, con USDC de prueba y datos reales de NASA FIRMS.
 
+<a href="https://brasafund.vercel.app"><img src="docs/img/readme/web.png" alt="Portada de la web: la Tierra en 3D con el satélite NOAA-20 en órbita y siete incendios marcados en Salta." width="100%"></a>
+
 ## Links
 
 - **Web en vivo:** [brasafund.vercel.app](https://brasafund.vercel.app). Muestra el mapa con los focos de Salta del día, la meta de cada incendio con la fuente de cada número, el fondo y la donación desde la billetera. La explicación técnica está en [`/fundamentos`](https://brasafund.vercel.app/fundamentos).
