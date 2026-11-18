@@ -6,7 +6,8 @@
   "scripts": {
     "build": "hardhat compile",
     "test": "hardhat test",
-    "test:coverage": "hardhat test --coverage && node scripts/check-coverage.mjs"
+    "test:coverage": "hardhat test --coverage && node scripts/check-coverage.mjs && hardhat compile",
+    "test:scripts": "node --test scripts/check-coverage.test.mjs"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "4.0.0",

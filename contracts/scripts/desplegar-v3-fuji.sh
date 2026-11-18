@@ -16,4 +16,8 @@ export CUARTEL_A_ADDRESS=0x141222F065eD0001C5854213fE5a4A358b94b3CA
 export CUARTEL_B_ADDRESS=0x9f22A4C28b923b69Bd3957D44799c16030CaDF5f
 export ENTIDAD_ADDRESS=0xdE8e125ECE93651D683C4653C9E31e3D95C1d21B
 
+# deploy.mjs despliega el bytecode que encuentra en artifacts/: se compila acá para que sea el de la fuente
+# y no uno instrumentado que haya dejado una corrida de cobertura.
+npx hardhat compile
+
 NETWORK=fuji node scripts/deploy.mjs

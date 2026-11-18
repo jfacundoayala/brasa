@@ -14,7 +14,7 @@ for (const [nombre, data, status, output] of [
   ["rechaza datos vacíos", "", 1, /LCOV sin líneas/],
   ["rechaza datos incompletos", "SF:a.sol\nLF:100\nend_of_record\n", 1, /LCOV inválido/],
   ["rechaza contadores inconsistentes", "SF:a.sol\nLH:101\nLF:100\nend_of_record\n", 1, /LCOV inválido/],
-  ["rechaza archivos ausentes", null, 1, /ENOENT/],
+  ["avisa qué correr si falta el archivo", null, 1, /^No existe .*lcov\.info: corré antes "npx hardhat test --coverage"\.\s*$/],
 ]) {
   test(nombre, () => {
     const dir = mkdtempSync(join(tmpdir(), "brasa-coverage-"));

@@ -93,6 +93,12 @@ async function par(m: Mundo, h0: number, h1: number, nonce = 1, obs0?: number, o
   return { reports: [a.report, b.report] as const, sigs: [a.sig, b.sig] as const };
 }
 
+/** Eventos del contrato con ese nombre en el recibo de una transacción. */
+async function eventos(tx: Promise<any>, nombre: string) {
+  const recibo = await (await tx).wait();
+  return recibo.logs.filter((l: any) => l.fragment?.name === nombre);
+}
+
 describe("BrasaFund: cobertura de condiciones", () => {
   for (const metodo of ["transferFederation", "proposeOracle", "cancelOracle", "createZone", "addRecipient", "setResponders", "revokeRecipient"]) {
     it(`${metodo}: rechaza a quien no es federación`, async () => {
@@ -107,37 +113,45 @@ describe("BrasaFund: cobertura de condiciones", () => {
     });
   }
 
-  for (const campo of ["moneda", "tesorería", "federación", "oráculo 0", "oráculo 1", "claves iguales", "comisión", "mínimo", "demora carnet", "demora oráculo"]) {
-    it(`constructor: rechaza aisladamente ${campo} inválido`, async () => {
+  // Cada caso cambia un solo argumento del constructor. REPETIDA pone en el sensor 1 la clave del sensor 0.
+  const REPETIDA = "clave del sensor 0";
+  for (const [campo, index, valor] of [
+    ["moneda en cero", 0, ethers.ZeroAddress], ["tesorería en cero", 1, ethers.ZeroAddress],
+    ["federación en cero", 4, ethers.ZeroAddress], ["oráculo 0 en cero", 5, ethers.ZeroAddress],
+    ["oráculo 1 en cero", 6, ethers.ZeroAddress], ["oráculos iguales", 6, REPETIDA],
+    ["comisión mayor al 5 %", 2, 501], ["mínimo de donación en cero", 3, 0],
+    ["demora de carnet mayor a 30 días", 7, 30 * 86400 + 1], ["demora de oráculos mayor a 30 días", 8, 30 * 86400 + 1],
+  ] as const) {
+    it(`constructor: rechaza ${campo}`, async () => {
       const m = await networkHelpers.loadFixture(deploy);
       const args: any[] = [await m.usdc.getAddress(), m.treasury.address, 300, U(2), m.fed.address, m.o0.address, m.o1.address, 0, 0];
-      const cambios: Record<string, [number, any]> = {
-        moneda: [0, ethers.ZeroAddress], tesorería: [1, ethers.ZeroAddress], federación: [4, ethers.ZeroAddress],
-        "oráculo 0": [5, ethers.ZeroAddress], "oráculo 1": [6, ethers.ZeroAddress], "claves iguales": [6, m.o0.address],
-        comisión: [2, 501], mínimo: [3, 0], "demora carnet": [7, 30 * 86400 + 1], "demora oráculo": [8, 30 * 86400 + 1],
-      };
-      const [index, value] = cambios[campo];
-      args[index] = value;
+      args[index] = valor === REPETIDA ? m.o0.address : valor;
       const factory = await ethers.getContractFactory("BrasaFund");
       await expect(factory.deploy(...args)).to.be.revertedWithCustomError(factory, "BadConfig");
     });
   }
 
   for (const [nombre, params] of [
-    ["focos", [0, 0, 1, 1, 1, 1]], ["tope", [1, 0, 0, 1, 1, 1]],
-    ["cooldown", [1, 30 * 86400 + 1, 1, 1, 1, 1]],
-    ["combate", [1, 0, 1, U(1_000_000) + 1n, 1, 1]],
-    ["logística", [1, 0, 1, 1, U(1_000_000) + 1n, 1]],
-    ["asistencia", [1, 0, 1, 1, 1, U(1_000_000) + 1n]],
-    ["suma cero", [1, 0, 1, 0, 0, 0]],
+    ["mínimo de focos en cero", [0, 0, 1, 1, 1, 1]], ["tope por evento en cero", [1, 0, 0, 1, 1, 1]],
+    ["cooldown mayor a 30 días", [1, 30 * 86400 + 1, 1, 1, 1, 1]],
+    ["costo de combate sobre el máximo", [1, 0, 1, U(1_000_000) + 1n, 1, 1]],
+    ["costo de logística sobre el máximo", [1, 0, 1, 1, U(1_000_000) + 1n, 1]],
+    ["costo de asistencia sobre el máximo", [1, 0, 1, 1, 1, U(1_000_000) + 1n]],
+    ["costos en cero", [1, 0, 1, 0, 0, 0]],
   ] as const) {
-    it(`createZone: rechaza solamente ${nombre} inválido`, async () => {
+    it(`createZone: rechaza ${nombre}`, async () => {
       const { fund } = await networkHelpers.loadFixture(deploy);
       await expect(fund.createZone(id("nueva"), id("p"), ...params)).to.be.revertedWithCustomError(fund, "BadConfig");
     });
   }
 
-  it("rechaza destinatarios desconocidos, wallet cero e identificadores repetidos", async () => {
+  it("createZone: acepta un cooldown de exactamente 30 días", async () => {
+    const { fund } = await networkHelpers.loadFixture(deploy);
+    await fund.createZone(id("borde"), id("p"), 1, 30 * 86400, 1, 1, 1, 1);
+    expect((await fund.zones(id("borde"))).cooldown).to.equal(30 * 86400);
+  });
+
+  it("rechaza destinatarios desconocidos, billetera en cero e identificadores repetidos", async () => {
     const m = await networkHelpers.loadFixture(deploy);
     await expect(m.fund.addRecipient(id("nuevo"), id("ausente"), 0, m.st1.address)).to.be.revertedWithCustomError(m.fund, "UnknownZone");
     await expect(m.fund.addRecipient(id("nuevo"), ZONA, 0, ethers.ZeroAddress)).to.be.revertedWithCustomError(m.fund, "BadConfig");
@@ -157,7 +171,7 @@ describe("BrasaFund: cobertura de condiciones", () => {
     expect(await m.usdc.balanceOf(m.st1.address)).to.equal(U(11.7));
   });
 
-  it("las lecturas cubren listas vacías, asistencia, decimales y dominio EIP-712", async () => {
+  it("las lecturas devuelven listas vacías y meta cero, publican el dominio EIP-712 y rechazan una zona inexistente", async () => {
     const m = await networkHelpers.loadFixture(deploy);
     expect(await m.fund.assistanceIds(ZONA)).to.deep.equal([id("cruzroja")]);
     expect(await m.fund.assistanceIds(id("ausente"))).to.deep.equal([]);
@@ -241,19 +255,41 @@ describe("BrasaFund: cobertura de condiciones", () => {
     }
   }
 
-  it("paga en ambos órdenes de sensores, usa ambos mínimos y reparte el polvo al primero", async () => {
+  it("paga en ambos órdenes de sensores, calcula la meta con el menor conteo y reparte el polvo al primero", async () => {
     const m = await networkHelpers.loadFixture(deploy);
     await m.fund.connect(m.donor).donateToZone(ZONA, U(10) + 2n, true);
     const p = await par(m, 4, 3, 1);
-    await expect(enviar(m, [p.reports[1], p.reports[0]])).to.emit(m.fund, "Released").withArgs(ZONA, 1, id("cuartel-1"), m.st1.address, 3_500_001n);
+    // Hora del dato distinta por sensor: si el contrato las guardara cruzadas, se nota.
+    const r0 = { ...p.reports[0], dataTime: p.reports[0].dataTime - 600 };
+    const r1 = p.reports[1];
+    // Menor conteo en el primer reporte (3 y 4): meta de 3 focos, 42 ha, 21.000 USDC; el saldo no alcanza.
+    const tx = enviar(m, [r1, r0]);
+    await expect(tx).to.emit(m.fund, "Released").withArgs(ZONA, 1, id("cuartel-1"), m.st1.address, 3_500_001n);
     expect(await m.usdc.balanceOf(m.st2.address)).to.equal(3_500_000n);
+    const [primero] = await eventos(tx, "FireEvent");
+    expect([primero.args.hotspots, primero.args.areaHa, primero.args.target, primero.args.released]).to.deep.equal([3n, 42n, U(21_000), U(10) + 2n]);
     const z = await m.fund.zones(ZONA);
-    expect(z.lastDataTime0).to.equal(p.reports[0].dataTime);
-    expect(z.lastDataTime1).to.equal(p.reports[1].dataTime);
+    expect(z.lastDataTime0).to.equal(r0.dataTime);
+    expect(z.lastDataTime1).to.equal(r1.dataTime);
     await networkHelpers.time.increase(13 * 3600);
-    await m.fund.connect(m.donor).donateToZone(ZONA, U(10), true);
-    const q = await par(m, 3, 4, 2);
-    await expect(enviar(m, q.reports)).to.emit(m.fund, "FireEvent");
+    // Menor conteo en el segundo reporte (4 y 3) y saldo mayor que la meta: se libera la meta justa.
+    await m.fund.connect(m.donor).donateToZone(ZONA, U(30_000), true);
+    const q = await par(m, 4, 3, 2);
+    const [segundo] = await eventos(enviar(m, q.reports), "FireEvent");
+    expect([segundo.args.hotspots, segundo.args.areaHa, segundo.args.target, segundo.args.released]).to.deep.equal([3n, 42n, U(21_000), U(21_000)]);
+    expect(await m.fund.zoneBalance(ZONA)).to.equal(U(9_000));
+  });
+
+  it("un reporte con exactamente 6 h de antigüedad libera", async () => {
+    const m = await networkHelpers.loadFixture(deploy);
+    await m.fund.connect(m.donor).donateToZone(ZONA, U(100), true);
+    const hora = (await ethers.provider.getBlock("latest"))!.timestamp + 100;
+    const p = await par(m, 3, 3, 1, hora - 6 * 3600, hora - 6 * 3600);
+    // Se fija la hora del bloque para que la antigüedad sea 6 h justas, ni un segundo más.
+    await networkHelpers.time.setNextBlockTimestamp(hora);
+    await m.fund.reportFire(p.reports, p.sigs);
+    expect(await m.fund.zoneBalance(ZONA)).to.equal(0n);
+    expect((await m.fund.zones(ZONA)).lastRelease).to.equal(hora);
   });
 
   it("con asistencia activa pero costo cero omite ese pago sin quitarle a los cuarteles", async () => {
@@ -266,7 +302,10 @@ describe("BrasaFund: cobertura de condiciones", () => {
     await m.fund.connect(m.donor).donateToZone(zona, U(10), true);
     const a = await firmar(m, m.o0, 0, 3, 1, undefined, zona);
     const b = await firmar(m, m.o1, 1, 3, 1, undefined, zona);
-    await enviar(m, [a.report, b.report]);
+    const pagos = await eventos(enviar(m, [a.report, b.report]), "Released");
+    // Un solo pago, el del cuartel: a la entidad de asistencia no se le emite ni un pago de cero.
+    expect(pagos.length).to.equal(1);
+    expect(pagos[0].args.recipientId).to.equal(id("estación"));
     expect(await m.usdc.balanceOf(m.st1.address)).to.equal(42);
     expect(await m.usdc.balanceOf(m.as1.address)).to.equal(0);
   });
