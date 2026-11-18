@@ -115,12 +115,12 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
           if (m.queryRenderedFeatures(ev.point, { layers: ["zona-relleno"] }).length) cb.current.onZona();
         });
         // Entra desde el espacio hasta Salta, inclinado para que se vea la cordillera.
-        m.fitBounds([[w, s], [e, n]], { padding: 24, pitch: 48, bearing: -12, duration: quieto() ? 0 : 3200, essential: false });
         m.once("moveend", () => {
           if (cancelled) return;
           m.setMinZoom(Math.max(3, m.getZoom() - 2.5));
           m.setMaxBounds([[w - 6, s - 5], [e + 6, n + 5]]);
         });
+        m.fitBounds([[w, s], [e, n]], { padding: 24, pitch: 48, bearing: -12, duration: quieto() ? 0 : 3200, essential: false });
       });
 
       // Incendios: la llama del logo, tantas como el nivel (1 leve, 2 medio, 3 grave). Brillan y titilan.
