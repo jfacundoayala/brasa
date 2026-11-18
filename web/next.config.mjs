@@ -4,6 +4,7 @@ const DATOS = [
   "https://api.routescan.io", // historial de donaciones y envíos
   "https://dolarapi.com", // dólar oficial, de referencia
   "https://api.coingecko.com", // precio de AVAX, de referencia
+  "https://raw.githubusercontent.com", // focos de la NASA, de la rama "datos" del repo
   "https://dataserver-coids.inpe.br", // aviso rápido (GOES-19)
   "https://tle.ivanstanojevic.me", // órbitas de NOAA-20 y NOAA-21
   "https://api.open-meteo.com", // clima en el incendio

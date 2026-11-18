@@ -38,6 +38,7 @@ import { Gravedad, LLAMA_ADENTRO, LLAMA_AFUERA } from "./Llamas";
 import { cuartelCercano } from "@/lib/cuarteles";
 import { AMBIENTE, DEPTOS, RADIO_KM, canchas, departamentoDe, genteCerca } from "@/lib/zonas";
 import { AYUDA_VIVIENDA_ARS, COSTO_HA, HORA_AVION, RADIO_AFECTADOS_KM, calcular, climaEn, type Clima } from "@/lib/formula";
+import { HORAS_DATO_FRESCO, leerFocos } from "@/lib/focos";
 import { avisosGoes, rumbo, type Aviso } from "@/lib/goes";
 import { calibracion } from "@/lib/referencias";
 
@@ -168,7 +169,7 @@ export default function Brasa() {
         : fetch("/deployment.json", { cache: "no-store" })
             .then((r) => (r.ok ? r.json() : Promise.reject()))
             .catch(leerFuji);
-    Promise.all([leerDeploy(), fetch("/focos.json", { cache: "no-store" }).then((r) => r.json())])
+    Promise.all([leerDeploy(), leerFocos()])
       .then(([d, f]) => {
         setDep(d);
         setFocos(f);
@@ -326,10 +327,11 @@ export default function Brasa() {
   const nInc = focos?.incendios?.length ?? 0;
   const puntosGlobo = useMemo(() => (focos?.incendios ?? []).map((x) => ({ lat: x.lat, lon: x.lon, nivel: x.nivel })), [focos]);
   const enVivo = ver === "vivo" && !!focos && !focos.datosGuardados;
-  // Si la última detección tiene más de 6 h, no se dice "hoy" ni "en vivo": se muestra la fecha del dato.
+  // La consulta a la NASA cubre las últimas 24 h. Si esa consulta es vieja, no se dice "hoy" ni "en vivo":
+  // se muestra la fecha del dato.
   const vivoViejo =
-    !!focosVivo && !focosVivo.datosGuardados && !!focosVivo.ultimaDeteccionUtc && Date.now() / 1000 - focosVivo.ultimaDeteccionUtc > 6 * 3600
-      ? new Date(focosVivo.ultimaDeteccionUtc * 1000).toLocaleDateString("es-AR", {
+    !!focosVivo && !focosVivo.datosGuardados && Date.now() - Date.parse(focosVivo.generatedAt) > HORAS_DATO_FRESCO * 3600_000
+      ? new Date(focosVivo.generatedAt).toLocaleDateString("es-AR", {
           day: "numeric",
           month: "numeric",
           timeZone: "America/Argentina/Salta",
