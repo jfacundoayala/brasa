@@ -231,7 +231,7 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
     const lista = focos?.incendios ?? [];
     return (
       <div className="mapa sin-mapa">
-        <p>Tu navegador no puede dibujar el mapa. {lista.length ? "Estos son los incendios de hoy:" : "Hoy no hay incendios confirmados."}</p>
+        <p>Tu navegador no puede dibujar el mapa. {lista.length ? "Estos son los incendios:" : "No hay incendios confirmados."}</p>
         <ul>
           {lista.map((x, i) => (
             <li key={x.id}>
