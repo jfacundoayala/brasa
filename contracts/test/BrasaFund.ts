@@ -52,6 +52,12 @@ async function deploy() {
 
 type Mundo = Awaited<ReturnType<typeof deploy>>;
 
+async function enviar(m: Mundo, reports: any[]) {
+  const domain = { name: "BrasaFund", version: "3", chainId: (await ethers.provider.getNetwork()).chainId, verifyingContract: await m.fund.getAddress() };
+  const sigs = await Promise.all(reports.map((r) => (r.sensor === 0 ? m.o0 : m.o1).signTypedData(domain, TYPES, r)));
+  return m.fund.reportFire(reports, sigs);
+}
+
 /** La federación asigna cuarteles al incendio de una zona por `dias` días. */
 async function asignar(fund: any, zona: string, ids: string[], dias = 29) {
   const ahora = (await ethers.provider.getBlock("latest"))!.timestamp;
@@ -86,6 +92,218 @@ async function par(m: Mundo, h0: number, h1: number, nonce = 1, obs0?: number, o
   const b = await firmar(m, m.o1, 1, h1, nonce, obs1);
   return { reports: [a.report, b.report] as const, sigs: [a.sig, b.sig] as const };
 }
+
+describe("BrasaFund: cobertura de condiciones", () => {
+  for (const metodo of ["transferFederation", "proposeOracle", "cancelOracle", "createZone", "addRecipient", "setResponders", "revokeRecipient"]) {
+    it(`${metodo}: rechaza a quien no es federación`, async () => {
+      const m = await networkHelpers.loadFixture(deploy);
+      const args: Record<string, any[]> = {
+        transferFederation: [m.outsider.address], proposeOracle: [0, m.outsider.address],
+        cancelOracle: [0], createZone: [id("nueva"), id("p"), 1, 0, 1, 1, 0, 0],
+        addRecipient: [id("nuevo"), ZONA, 0, m.outsider.address],
+        setResponders: [ZONA, [], 0], revokeRecipient: [id("cuartel-1")],
+      };
+      await expect((m.fund.connect(m.outsider) as any)[metodo](...args[metodo])).to.be.revertedWithCustomError(m.fund, "NotFederation");
+    });
+  }
+
+  for (const campo of ["moneda", "tesorería", "federación", "oráculo 0", "oráculo 1", "claves iguales", "comisión", "mínimo", "demora carnet", "demora oráculo"]) {
+    it(`constructor: rechaza aisladamente ${campo} inválido`, async () => {
+      const m = await networkHelpers.loadFixture(deploy);
+      const args: any[] = [await m.usdc.getAddress(), m.treasury.address, 300, U(2), m.fed.address, m.o0.address, m.o1.address, 0, 0];
+      const cambios: Record<string, [number, any]> = {
+        moneda: [0, ethers.ZeroAddress], tesorería: [1, ethers.ZeroAddress], federación: [4, ethers.ZeroAddress],
+        "oráculo 0": [5, ethers.ZeroAddress], "oráculo 1": [6, ethers.ZeroAddress], "claves iguales": [6, m.o0.address],
+        comisión: [2, 501], mínimo: [3, 0], "demora carnet": [7, 30 * 86400 + 1], "demora oráculo": [8, 30 * 86400 + 1],
+      };
+      const [index, value] = cambios[campo];
+      args[index] = value;
+      const factory = await ethers.getContractFactory("BrasaFund");
+      await expect(factory.deploy(...args)).to.be.revertedWithCustomError(factory, "BadConfig");
+    });
+  }
+
+  for (const [nombre, params] of [
+    ["focos", [0, 0, 1, 1, 1, 1]], ["tope", [1, 0, 0, 1, 1, 1]],
+    ["cooldown", [1, 30 * 86400 + 1, 1, 1, 1, 1]],
+    ["combate", [1, 0, 1, U(1_000_000) + 1n, 1, 1]],
+    ["logística", [1, 0, 1, 1, U(1_000_000) + 1n, 1]],
+    ["asistencia", [1, 0, 1, 1, 1, U(1_000_000) + 1n]],
+    ["suma cero", [1, 0, 1, 0, 0, 0]],
+  ] as const) {
+    it(`createZone: rechaza solamente ${nombre} inválido`, async () => {
+      const { fund } = await networkHelpers.loadFixture(deploy);
+      await expect(fund.createZone(id("nueva"), id("p"), ...params)).to.be.revertedWithCustomError(fund, "BadConfig");
+    });
+  }
+
+  it("rechaza destinatarios desconocidos, wallet cero e identificadores repetidos", async () => {
+    const m = await networkHelpers.loadFixture(deploy);
+    await expect(m.fund.addRecipient(id("nuevo"), id("ausente"), 0, m.st1.address)).to.be.revertedWithCustomError(m.fund, "UnknownZone");
+    await expect(m.fund.addRecipient(id("nuevo"), ZONA, 0, ethers.ZeroAddress)).to.be.revertedWithCustomError(m.fund, "BadConfig");
+    await expect(m.fund.addRecipient(id("cuartel-1"), ZONA, 0, m.st1.address)).to.be.revertedWithCustomError(m.fund, "BadConfig");
+    await expect(m.fund.revokeRecipient(id("ausente"))).to.be.revertedWithCustomError(m.fund, "UnknownRecipient");
+    await expect(m.fund.connect(m.donor).donateToRecipient(id("ausente"), U(10), false)).to.be.revertedWithCustomError(m.fund, "UnknownRecipient");
+    await expect(m.fund.setResponders(ZONA, Array(26).fill(id("cuartel-1")), 0)).to.be.revertedWithCustomError(m.fund, "TooManyRecipients");
+  });
+
+  it("la donación directa exige el mínimo neto y acepta el límite exacto", async () => {
+    const m = await networkHelpers.loadFixture(deploy);
+    for (const monto of [0n, U(1), U(2)]) {
+      await expect(m.fund.connect(m.donor).donateToRecipient(id("cuartel-1"), monto, false)).to.be.revertedWithCustomError(m.fund, "BelowMinDonation");
+    }
+    await m.fund.connect(m.donor).donateToRecipient(id("cuartel-1"), U(2), true);
+    await m.fund.connect(m.donor).donateToRecipient(id("cuartel-1"), U(10), false);
+    expect(await m.usdc.balanceOf(m.st1.address)).to.equal(U(11.7));
+  });
+
+  it("las lecturas cubren listas vacías, asistencia, decimales y dominio EIP-712", async () => {
+    const m = await networkHelpers.loadFixture(deploy);
+    expect(await m.fund.assistanceIds(ZONA)).to.deep.equal([id("cruzroja")]);
+    expect(await m.fund.assistanceIds(id("ausente"))).to.deep.equal([]);
+    expect(await m.fund.stationIds(id("ausente"))).to.deep.equal([]);
+    expect(await m.fund.previewTarget(ZONA, 0)).to.deep.equal([0n, 0n]);
+    expect(await m.fund.domainSeparator()).to.equal(ethers.TypedDataEncoder.hashDomain({
+      name: "BrasaFund", version: "3", chainId: (await ethers.provider.getNetwork()).chainId, verifyingContract: await m.fund.getAddress(),
+    }));
+    expect(await m.usdc.decimals()).to.equal(6);
+    const fee = await ethers.deployContract("MockFeeToken");
+    expect(await fee.decimals()).to.equal(6);
+    await expect(m.fund.previewTarget(id("ausente"), 1)).to.be.revertedWithCustomError(m.fund, "UnknownZone");
+    const a = await firmar(m, m.o0, 0, 3, 1, undefined, id("ausente"));
+    const b = await firmar(m, m.o1, 1, 3, 1, undefined, id("ausente"));
+    await expect(enviar(m, [a.report, b.report])).to.be.revertedWithCustomError(m.fund, "UnknownZone");
+  });
+
+  it("rota el sensor 1 y bloquea una propuesta concurrente del sensor 0", async () => {
+    const m = await networkHelpers.loadFixture(deploy);
+    await m.fund.proposeOracle(1, m.outsider.address);
+    await expect(m.fund.proposeOracle(0, m.donor.address)).to.be.revertedWithCustomError(m.fund, "RotationInProgress");
+    await expect(m.fund.connect(m.donor).acceptOracle(1)).to.emit(m.fund, "OracleChanged").withArgs(1, m.o1.address, m.outsider.address);
+    expect(await m.fund.oracle1()).to.equal(m.outsider.address);
+    await expect(m.fund.proposeOracle(0, m.o0.address)).to.be.revertedWithCustomError(m.fund, "BadConfig");
+  });
+
+  for (const lado of [0, 1]) {
+    for (const caso of ["sensor inválido", "polígono", "futuro", "dato posterior", "dato viejo", "reporte viejo", "focos"]) {
+      it(`reportFire: ${caso} solamente en el reporte ${lado}`, async () => {
+        const m = await networkHelpers.loadFixture(deploy);
+        const { reports } = await par(m, 3, 3);
+        const rs = reports.map((r) => ({ ...r }));
+        const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+        const r = rs[lado];
+        const errores: Record<string, string> = {
+          "sensor inválido": "BadReports", polígono: "WrongPolygon", futuro: "StaleReport",
+          "dato posterior": "BadReports", "dato viejo": "StaleReport", "reporte viejo": "StaleReport", focos: "NotEnoughHotspots",
+        };
+        if (caso === "sensor inválido") r.sensor = 2;
+        if (caso === "polígono") r.polygonHash = id("otro");
+        if (caso === "futuro") r.observedAt = now + 3600;
+        if (caso === "dato posterior") r.dataTime = r.observedAt + 1;
+        if (caso === "dato viejo") r.dataTime = now - 86401;
+        if (caso === "reporte viejo") { r.observedAt = now - 21601; r.dataTime = now - 22000; }
+        if (caso === "focos") r.hotspots = 2;
+        await expect(enviar(m, rs)).to.be.revertedWithCustomError(m.fund, errores[caso]);
+      });
+    }
+  }
+
+  it("rechaza zonas distintas aunque los sensores sean válidos", async () => {
+    const m = await networkHelpers.loadFixture(deploy);
+    const { reports } = await par(m, 3, 3);
+    await expect(enviar(m, [reports[0], { ...reports[1], zoneId: id("otra") }])).to.be.revertedWithCustomError(m.fund, "BadReports");
+  });
+
+  for (const lado of [0, 1]) {
+    for (const caso of ["observación anterior", "dato repetido"]) {
+      it(`rechaza ${caso} solamente del sensor ${lado}`, async () => {
+        const m = await networkHelpers.loadFixture(deploy);
+        const zona = id("rápida");
+        await m.fund.createZone(zona, id("p"), 1, 0, U(1000), 1, 1, 1);
+        await m.fund.addRecipient(id("rápido"), zona, 0, m.st1.address);
+        await asignar(m.fund, zona, [id("rápido")]);
+        await m.fund.connect(m.donor).donateToZone(zona, U(100), true);
+        const a = await firmar(m, m.o0, 0, 3, 1, undefined, zona);
+        const b = await firmar(m, m.o1, 1, 3, 1, undefined, zona);
+        await enviar(m, [a.report, b.report]);
+        const z = await m.fund.zones(zona);
+        await networkHelpers.time.increase(60);
+        const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+        const rs = [a.report, b.report].map((r) => ({ ...r, nonce: 2, observedAt: now - 1, dataTime: now - 2 }));
+        if (caso === "observación anterior") {
+          rs[lado].observedAt = Number(z.lastRelease);
+          rs[lado].dataTime = Number(z.lastRelease) - 1;
+        } else {
+          rs[lado].dataTime = lado === 0 ? a.report.dataTime : b.report.dataTime;
+        }
+        await expect(enviar(m, rs)).to.be.revertedWithCustomError(m.fund, "StaleReport");
+      });
+    }
+  }
+
+  it("paga en ambos órdenes de sensores, usa ambos mínimos y reparte el polvo al primero", async () => {
+    const m = await networkHelpers.loadFixture(deploy);
+    await m.fund.connect(m.donor).donateToZone(ZONA, U(10) + 2n, true);
+    const p = await par(m, 4, 3, 1);
+    await expect(enviar(m, [p.reports[1], p.reports[0]])).to.emit(m.fund, "Released").withArgs(ZONA, 1, id("cuartel-1"), m.st1.address, 3_500_001n);
+    expect(await m.usdc.balanceOf(m.st2.address)).to.equal(3_500_000n);
+    const z = await m.fund.zones(ZONA);
+    expect(z.lastDataTime0).to.equal(p.reports[0].dataTime);
+    expect(z.lastDataTime1).to.equal(p.reports[1].dataTime);
+    await networkHelpers.time.increase(13 * 3600);
+    await m.fund.connect(m.donor).donateToZone(ZONA, U(10), true);
+    const q = await par(m, 3, 4, 2);
+    await expect(enviar(m, q.reports)).to.emit(m.fund, "FireEvent");
+  });
+
+  it("con asistencia activa pero costo cero omite ese pago sin quitarle a los cuarteles", async () => {
+    const m = await networkHelpers.loadFixture(deploy);
+    const zona = id("sin-costo-asistencia");
+    await m.fund.createZone(zona, id("p"), 1, 0, U(1000), 1, 0, 0);
+    await m.fund.addRecipient(id("estación"), zona, 0, m.st1.address);
+    await m.fund.addRecipient(id("asistencia"), zona, 1, m.as1.address);
+    await asignar(m.fund, zona, [id("estación")]);
+    await m.fund.connect(m.donor).donateToZone(zona, U(10), true);
+    const a = await firmar(m, m.o0, 0, 3, 1, undefined, zona);
+    const b = await firmar(m, m.o1, 1, 3, 1, undefined, zona);
+    await enviar(m, [a.report, b.report]);
+    expect(await m.usdc.balanceOf(m.st1.address)).to.equal(42);
+    expect(await m.usdc.balanceOf(m.as1.address)).to.equal(0);
+  });
+
+  for (const lado of [0, 1]) {
+    it(`calcula la separación temporal con el reporte ${lado} más reciente`, async () => {
+      const m = await networkHelpers.loadFixture(deploy);
+      const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+      const p = await par(m, 3, 3, 1, now - (lado === 0 ? 60 : 4 * 3600), now - (lado === 1 ? 60 : 4 * 3600));
+      await expect(enviar(m, p.reports)).to.be.revertedWithCustomError(m.fund, "ReportsTooFarApart");
+    });
+  }
+
+  it("la asistencia pendiente se omite y cobra cuando vence la demora", async () => {
+    const m = await networkHelpers.loadFixture(deploy);
+    const fund = await ethers.deployContract("BrasaFund", [
+      await m.usdc.getAddress(), m.treasury.address, 300, U(2), m.fed.address, m.o0.address, m.o1.address, 3600, 0,
+    ]);
+    const lento = { ...m, fund } as Mundo;
+    await fund.createZone(ZONA, id("poligono"), 1, 0, U(1000), COMBATE, LOGISTICA, ASISTENCIA);
+    await fund.addRecipient(id("estación"), ZONA, 0, m.st1.address);
+    await asignar(fund, ZONA, [id("estación")]);
+    await networkHelpers.time.increase(3601);
+    await fund.addRecipient(id("asistencia"), ZONA, 1, m.as1.address);
+    await m.usdc.connect(m.donor).approve(await fund.getAddress(), ethers.MaxUint256);
+    await fund.connect(m.donor).donateToZone(ZONA, U(100), true);
+    const p = await par(lento, 3, 3);
+    await enviar(lento, p.reports);
+    expect(await m.usdc.balanceOf(m.st1.address)).to.equal(U(100));
+    expect(await m.usdc.balanceOf(m.as1.address)).to.equal(0);
+    await networkHelpers.time.increase(3601);
+    await fund.connect(m.donor).donateToZone(ZONA, U(100), true);
+    const q = await par(lento, 3, 3, 2);
+    await enviar(lento, q.reports);
+    expect(await m.usdc.balanceOf(m.as1.address)).to.equal(U(30));
+  });
+});
 
 describe("BrasaFund", () => {
   describe("comisión del 3% y donaciones", () => {
