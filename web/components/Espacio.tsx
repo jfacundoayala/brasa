@@ -1,13 +1,14 @@
 "use client";
 // Portada: la Tierra vista desde el espacio, con NOAA-20 y NOAA-21 en sus órbitas reales y los incendios de Salta.
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import Brasas from "./Brasas";
 import { Gravedad } from "./Llamas";
 import type { EstadoSat, Punto } from "./Globo";
-import { leerTles, type Tle } from "@/lib/orbita";
+import { leerTles, refrescarTles, type Tle } from "@/lib/tle";
 
-const Globo = dynamic(() => import("./Globo"), { ssr: false, loading: () => <div className="globo-cargando" aria-hidden="true" /> });
+const respaldo = <div className="globo-cargando" aria-hidden="true" />;
+const Globo = dynamic(() => import("./Globo"), { ssr: false, loading: () => respaldo });
 
 const ACELERACION = 120;
 const fmt = (n: number, d = 1) => n.toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -23,24 +24,113 @@ function hayWebgl(): boolean {
   }
 }
 
-export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: boolean }) {
+/** El globo es un adorno: si falla una textura o su código, queda el círculo fijo y el resto de la página sigue. */
+class Contencion extends Component<{ alFallar: () => void; children: ReactNode }, { fallo: boolean }> {
+  state = { fallo: false };
+  static getDerivedStateFromError() {
+    return { fallo: true };
+  }
+  componentDidCatch() {
+    this.props.alFallar();
+  }
+  render() {
+    return this.state.fallo ? respaldo : this.props.children;
+  }
+}
+
+/** El globo con su panel. Guarda acá el estado del satélite para que cada dato nuevo no vuelva a renderizar la portada. */
+function Orbitas({ puntos, activo, quieto }: { puntos: Punto[]; activo: boolean; quieto: boolean }) {
   const [tles, setTles] = useState<Tle[] | null>(null);
   const [sat, setSat] = useState<EstadoSat | null>(null);
-  const [activo, setActivo] = useState(true);
   const [webgl, setWebgl] = useState(true);
+  const [libre, setLibre] = useState(false);
+  const [fallo, setFallo] = useState(false);
+
+  useEffect(() => {
+    setWebgl(hayWebgl());
+    let montado = true;
+    // Primero los TLE guardados; los del día llegan después y no frenan el globo.
+    leerTles()
+      .then((guardados) => {
+        if (!montado) return;
+        setTles(guardados);
+        return refrescarTles(guardados).then((frescos) => {
+          if (montado && frescos) setTles(frescos);
+        });
+      })
+      .catch(() => setTles((t) => t ?? []));
+    return () => {
+      montado = false;
+    };
+  }, []);
+
+  // El globo se monta cuando el navegador queda libre, para no trabar la primera carga.
+  useEffect(() => {
+    const montar = () => setLibre(true);
+    if ("requestIdleCallback" in window) {
+      const id = requestIdleCallback(montar, { timeout: 2000 });
+      return () => cancelIdleCallback(id);
+    }
+    // Safari no tiene requestIdleCallback.
+    const id = setTimeout(montar, 300);
+    return () => clearTimeout(id);
+  }, []);
+
+  const hayGlobo = webgl && !fallo;
+  return (
+    <div className="espacio-globo">
+      <div className="globo-lienzo">
+        {hayGlobo && libre && tles ? (
+          <Contencion alFallar={() => setFallo(true)}>
+            <Globo tles={tles} puntos={puntos} aceleracion={quieto ? 1 : ACELERACION} activo={activo} quieto={quieto} onEstado={setSat} />
+          </Contencion>
+        ) : (
+          respaldo
+        )}
+      </div>
+      {hayGlobo && tles?.length !== 0 && (
+        <div className={`hud${sat?.sobreSalta ? " escaneando" : ""}`} role="status" aria-live="off">
+          <p className="hud-tit">
+            <i aria-hidden="true" /> {sat?.nombre ?? "NOAA-20"}, órbita calculada
+          </p>
+          <dl>
+            <div>
+              <dt>Altura</dt>
+              <dd>{sat ? `${fmt(sat.altKm, 0)} km` : "…"}</dd>
+            </div>
+            <div>
+              <dt>Velocidad</dt>
+              <dd>{sat ? `${fmt(sat.velKms)} km/s` : "…"}</dd>
+            </div>
+            <div>
+              <dt>Pasa sobre</dt>
+              <dd>{sat ? `${coord(sat.lat, "N", "S")} · ${coord(sat.lon, "E", "O")}` : "…"}</dd>
+            </div>
+          </dl>
+          <p className="hud-pie">
+            {quieto ? "Posición en tiempo real" : `Simulación: órbita real, tiempo acelerado ×${ACELERACION}`}
+            {sat?.sobreSalta && <span className="hud-paso">{quieto ? "Pasa sobre Salta" : "En la simulación pasa sobre Salta"}</span>}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: boolean }) {
+  const [activo, setActivo] = useState(true);
   const caja = useRef<HTMLElement>(null);
   const [quieto, setQuieto] = useState(false);
 
   useEffect(() => {
-    setWebgl(hayWebgl());
     setQuieto(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    leerTles().then(setTles).catch(() => setTles([]));
   }, []);
 
   // El globo deja de dibujar cuando la portada sale de la pantalla.
   useEffect(() => {
     if (!caja.current) return;
-    const io = new IntersectionObserver(([e]) => setActivo(e.isIntersecting), { rootMargin: "80px" });
+    // Si llegan varios avisos juntos, vale el último.
+    const io = new IntersectionObserver((lote) => setActivo(lote[lote.length - 1].isIntersecting), { rootMargin: "80px" });
     io.observe(caja.current);
     return () => io.disconnect();
   }, []);
@@ -49,16 +139,15 @@ export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: b
   const entra = (i: number) => ({ style: { "--i": i } as React.CSSProperties });
 
   return (
-    <section className="espacio" ref={caja} aria-label="brasa desde el espacio">
+    <section className="espacio" ref={caja} aria-label="La Tierra y los satélites que detectan incendios">
       <div className="espacio-cielo" aria-hidden="true" />
       <Brasas />
       <div className="espacio-in">
         <div className="espacio-texto">
           <p className="chip-sat entra" {...entra(0)}>
-            <span className="punto-vivo" aria-hidden="true" />
             <b>NASA FIRMS</b>
             <span aria-hidden="true">·</span> NOAA-20 y NOAA-21 <span aria-hidden="true">·</span>
-            <span className="chip-sat-dim">{enVivo ? "mirando Salta ahora" : "ven el fuego desde el espacio"}</span>
+            <span className="chip-sat-dim">{enVivo ? "cada uno pasa sobre Salta unas dos veces por día" : "ven el fuego desde el espacio"}</span>
           </p>
           <p className="marca entra" {...entra(1)}>
             brasa
@@ -82,45 +171,15 @@ export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: b
               Donar ahora
             </a>
             <a className="btn btn-vidrio" href="#mapa">
-              Ver el mapa del fuego
+              Ver el mapa
             </a>
           </div>
         </div>
 
-        <div className="espacio-globo">
-          <div className="globo-lienzo">
-            {webgl && tles ? (
-              <Globo tles={tles} puntos={puntos} aceleracion={quieto ? 1 : ACELERACION} activo={activo} quieto={quieto} onEstado={setSat} />
-            ) : (
-              <div className="globo-cargando" aria-hidden="true" />
-            )}
-          </div>
-          {webgl && tles?.length !== 0 && (
-            <div className={`hud${sat?.sobreSalta ? " escaneando" : ""}`} role="status" aria-live="off">
-              <p className="hud-tit">
-                <i aria-hidden="true" /> {sat?.nombre ?? "NOAA-20"}, órbita calculada
-              </p>
-              <dl>
-                <div>
-                  <dt>Altura</dt>
-                  <dd>{sat ? `${fmt(sat.altKm, 0)} km` : "…"}</dd>
-                </div>
-                <div>
-                  <dt>Velocidad</dt>
-                  <dd>{sat ? `${fmt(sat.velKms)} km/s` : "…"}</dd>
-                </div>
-                <div>
-                  <dt>Pasa sobre</dt>
-                  <dd>{sat ? `${coord(sat.lat, "N", "S")} · ${coord(sat.lon, "E", "O")}` : "…"}</dd>
-                </div>
-              </dl>
-              <p className="hud-pie">{sat?.sobreSalta ? "Escaneando Salta con VIIRS" : `Tiempo acelerado ×${quieto ? 1 : ACELERACION}`}</p>
-            </div>
-          )}
-        </div>
+        <Orbitas puntos={puntos} activo={activo} quieto={quieto} />
       </div>
       <p className="espacio-creditos">
-        Tierra: <a href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/" target="_blank" rel="noreferrer">NASA Blue Marble</a> · Órbitas: TLE de NORAD (SGP4) · satélites fuera de escala
+        Tierra: <a href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/" target="_blank" rel="noreferrer">NASA Blue Marble</a> · Órbitas: TLE de NORAD (SGP4) · satélites fuera de escala · iluminación ilustrativa
       </p>
       <a className="espacio-bajar" href="#inicio">
         <span>Cómo ayuda</span>

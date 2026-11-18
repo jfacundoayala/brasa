@@ -106,7 +106,7 @@ export function getEth(): Eip1193Provider | null {
 
 export async function switchTo(d: Deployment) {
   const eth = getEth();
-  if (!eth) throw new Error("No hay wallet");
+  if (!eth) throw new Error("No hay billetera");
   const chainId = "0x" + d.chainId.toString(16);
   try {
     await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId }] });
@@ -346,7 +346,7 @@ export async function donar(
   onStep: (s: { paso: "approve" | "donar"; hash: string }) => void,
 ): Promise<string> {
   const eth = getEth();
-  if (!eth) throw new Error("No hay wallet");
+  if (!eth) throw new Error("No hay billetera");
   const signer = await new BrowserProvider(eth).getSigner();
   const who = await signer.getAddress();
   const usdc = new Contract(d.usdc, ERC20_ABI, signer);

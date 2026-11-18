@@ -1,4 +1,4 @@
-// Logo de Brasa: el mismo dibujo que docs/identidad/logo-brasa-oscuro.svg (llama en tres tonos, por los tres niveles de incendio, con el satélite que la detecta y "brasa" escrito).
+// Logo de brasa: el mismo dibujo que docs/identidad/logo-brasa-oscuro.svg (llama en tres tonos, por los tres niveles de incendio, con el satélite que la detecta y "brasa" escrito).
 // Va en línea (no como <img>) para que el texto use Space Grotesk, la letra que carga la página.
 export default function Logo({ height = 48 }: { height?: number }) {
   return (

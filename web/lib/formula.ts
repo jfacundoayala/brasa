@@ -1,5 +1,5 @@
-// Fórmula Brasa: cuánto dinero hace falta para un incendio.
-// Se explica en docs/producto/FORMULA-BRASA.md. Cada número tiene su fuente; los factores son la calibración de Brasa
+// Fórmula de brasa: cuánto dinero hace falta para un incendio.
+// Se explica en docs/producto/FORMULA-BRASA.md. Cada número tiene su fuente; los factores son la calibración de brasa
 // sobre esas fuentes, y se ajustan con los costos reales que nos den los cuarteles.
 //
 //   Combate     = superficie × costo por ha × intensidad × clima × ambiente

@@ -65,11 +65,14 @@ export default function Brasas({ cantidad = 70 }: { cantidad?: number }) {
       if (visible && !quieto) raf = requestAnimationFrame(dibujar);
     };
     raf = requestAnimationFrame(dibujar);
-    const io = new IntersectionObserver(([e]) => {
+    const io = new IntersectionObserver((lote) => {
       const antesVisible = visible;
-      visible = e.isIntersecting;
+      // Si llegan varios avisos juntos, vale el último.
+      visible = lote[lote.length - 1].isIntersecting;
       if (visible && !antesVisible && !quieto) {
         antes = performance.now();
+        // Nunca dos bucles a la vez: se corta el cuadro pendiente antes de pedir otro.
+        cancelAnimationFrame(raf);
         raf = requestAnimationFrame(dibujar);
       }
     });

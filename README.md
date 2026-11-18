@@ -140,4 +140,4 @@ docs/        producto, técnico, seguridad, legal, presentación e identidad
 
 Código bajo licencia [MIT](LICENSE). El nombre "brasa" y el logo no están incluidos en la licencia.
 
-Focos: NASA FIRMS (LANCE). Alerta temprana: GOES-19 (NOAA), vía el programa Queimadas del INPE. Clima: Open-Meteo. Mapa: imagen satelital Esri World Imagery, relieve AWS Terrain Tiles (Mapzen). Tierra 3D: NASA Blue Marble. Órbitas: TLE de NORAD (SGP4, satellite.js). Límite de Salta: geoBoundaries (CC BY 2.5).
+Focos: NASA FIRMS (LANCE). Alerta temprana: GOES-19 (NOAA), vía el programa Queimadas del INPE. Clima: Open-Meteo. Mapa: imagen satelital Esri World Imagery (Esri, Vantor, Earthstar Geographics), nombres de Esri con datos de © OpenStreetMap contributors, relieve AWS Terrain Tiles (Mapzen). Tierra 3D: NASA Blue Marble. Órbitas: TLE de NORAD (SGP4, satellite.js). Límite de Salta: geoBoundaries (CC BY 2.5).
