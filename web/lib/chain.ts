@@ -99,40 +99,50 @@ export function explorerBase(d: Deployment): string {
 export const txUrl = (d: Deployment, h: string) => (explorerBase(d) ? `${explorerBase(d)}/tx/${h}` : "");
 export const addrUrl = (d: Deployment, a: string) => (explorerBase(d) ? `${explorerBase(d)}/address/${a}` : "");
 
-// Core es la billetera de Avalanche. Si está instalada se usa esa, aunque haya otra que también ocupe window.ethereum.
-const CORE_RDNS = "app.core.extension";
+// Billeteras que la web ofrece por nombre. Core es la de Avalanche y va primero.
+export type Billetera = { id: "core" | "metamask" | "otra"; nombre: string; provider: Eip1193Provider };
+const RDNS: Record<string, Billetera["id"]> = { "app.core.extension": "core", "io.metamask": "metamask" };
+const NOMBRE = { core: "Core", metamask: "MetaMask", otra: "mi billetera" } as const;
 type Anuncio = { info: { rdns: string; name: string }; provider: Eip1193Provider };
-let core: Eip1193Provider | null = null;
+const anunciadas = new Map<Billetera["id"], Eip1193Provider>();
 let escuchando = false;
+let elegida: Eip1193Provider | null = null;
 
-/** Pide a las billeteras instaladas que se presenten (EIP-6963). Responden en el mismo momento. */
-function buscarCore() {
-  if (typeof window === "undefined") return;
+const sirve = (e: unknown): e is Eip1193Provider => typeof (e as Eip1193Provider | undefined)?.request === "function";
+
+/** Las billeteras instaladas en el navegador. Se presentan solas (EIP-6963) y responden en el mismo momento. */
+export function billeteras(): Billetera[] {
+  if (typeof window === "undefined") return [];
   if (!escuchando) {
     escuchando = true;
     window.addEventListener("eip6963:announceProvider", (ev) => {
       const d = (ev as CustomEvent<Anuncio>).detail;
-      if (d?.info?.rdns === CORE_RDNS && typeof d.provider?.request === "function") core = d.provider;
+      const id = RDNS[d?.info?.rdns];
+      if (id && sirve(d.provider)) anunciadas.set(id, d.provider);
     });
   }
-  if (!core) window.dispatchEvent(new Event("eip6963:requestProvider"));
+  window.dispatchEvent(new Event("eip6963:requestProvider"));
+  const g = globalThis as unknown as { avalanche?: unknown; ethereum?: unknown };
+  const eth = sirve(g.ethereum) ? (g.ethereum as Eip1193Provider & { isMetaMask?: boolean; isAvalanche?: boolean }) : null;
+  // Respaldo para versiones que no se anuncian: Core se publica en window.avalanche y MetaMask marca window.ethereum.
+  const core = anunciadas.get("core") ?? (sirve(g.avalanche) ? g.avalanche : eth?.isAvalanche ? eth : null);
+  const metamask = anunciadas.get("metamask") ?? (eth?.isMetaMask && !eth.isAvalanche && eth !== core ? eth : null);
+  const lista: Billetera[] = [];
+  if (core) lista.push({ id: "core", nombre: NOMBRE.core, provider: core });
+  if (metamask) lista.push({ id: "metamask", nombre: NOMBRE.metamask, provider: metamask });
+  if (lista.length === 0 && eth) lista.push({ id: "otra", nombre: NOMBRE.otra, provider: eth });
+  return lista;
 }
 
+/** Deja elegida una billetera: desde acá, donar y cambiar de red van por esa. */
+export function elegir(id: Billetera["id"]): Eip1193Provider | null {
+  elegida = billeteras().find((b) => b.id === id)?.provider ?? null;
+  return elegida;
+}
+
+/** La billetera elegida o, si todavía no se eligió, la primera de la lista. */
 export function getEth(): Eip1193Provider | null {
-  buscarCore();
-  if (core) return core;
-  const g = globalThis as unknown as { avalanche?: Eip1193Provider; ethereum?: Eip1193Provider };
-  // Core también se publica en window.avalanche.
-  const e = typeof g.avalanche?.request === "function" ? g.avalanche : g.ethereum;
-  return e && typeof e.request === "function" ? e : null;
-}
-
-/** true si la billetera que se va a usar es Core. */
-export function esCore(): boolean {
-  const e = getEth();
-  if (!e) return false;
-  const g = globalThis as unknown as { avalanche?: Eip1193Provider };
-  return e === core || e === g.avalanche || (e as { isAvalanche?: boolean }).isAvalanche === true;
+  return elegida ?? billeteras()[0]?.provider ?? null;
 }
 
 export async function switchTo(d: Deployment) {
