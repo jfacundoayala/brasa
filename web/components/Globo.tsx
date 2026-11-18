@@ -45,13 +45,14 @@ function Escena({ tles, puntos, aceleracion, quieto, onEstado }: Props) {
   const puntero = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
+    if (quieto) return;
     const mover = (e: PointerEvent) => {
       puntero.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       puntero.current.y = (e.clientY / window.innerHeight) * 2 - 1;
     };
     window.addEventListener("pointermove", mover, { passive: true });
     return () => window.removeEventListener("pointermove", mover);
-  }, []);
+  }, [quieto]);
 
   // Salta mirando a la cámara, un poco por debajo del centro.
   const baseY = (-(SALTA.lon + 90) * Math.PI) / 180;
@@ -69,13 +70,13 @@ function Escena({ tles, puntos, aceleracion, quieto, onEstado }: Props) {
 
   return (
     <>
-      <Stars radius={80} depth={40} count={2600} factor={3.2} saturation={0} fade speed={0.4} />
+      <Stars radius={80} depth={40} count={2600} factor={3.2} saturation={0} fade speed={quieto ? 0 : 0.4} />
       <ambientLight intensity={0.25} />
       <directionalLight position={[SOL.x * 5, SOL.y * 5, SOL.z * 5]} intensity={2.2} />
       <group ref={inclinacion} rotation={[baseX, 0, 0]}>
         <group ref={giro} rotation={[0, baseY, 0]}>
           <Tierra />
-          <Fuegos puntos={puntos} />
+          <Fuegos puntos={puntos} quieto={quieto} />
           {tles.map((t, i) => (
             <Satelite key={t.id} tle={t} principal={i === 0} aceleracion={aceleracion} onEstado={i === 0 ? onEstado : undefined} />
           ))}
@@ -187,7 +188,7 @@ function useBrillo() {
   }, []);
 }
 
-function Fuegos({ puntos }: { puntos: Punto[] }) {
+function Fuegos({ puntos, quieto }: { puntos: Punto[]; quieto: boolean }) {
   const brillo = useBrillo();
   const onda = useRef<THREE.Mesh>(null);
   const grupo = useRef<THREE.Group>(null);
@@ -195,6 +196,7 @@ function Fuegos({ puntos }: { puntos: Punto[] }) {
   const orientacion = useMemo(() => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), salta.clone().normalize()), [salta]);
 
   useFrame(({ clock }) => {
+    if (quieto) return;
     const t = clock.elapsedTime;
     if (onda.current) {
       const f = (t * 0.6) % 1;
@@ -209,9 +211,9 @@ function Fuegos({ puntos }: { puntos: Punto[] }) {
 
   return (
     <>
-      <mesh ref={onda} position={salta} quaternion={orientacion}>
+      <mesh ref={onda} position={salta} quaternion={orientacion} scale={0.06}>
         <ringGeometry args={[0.8, 1, 48]} />
-        <meshBasicMaterial color="#FF8A4C" transparent depthWrite={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#FF8A4C" transparent opacity={0.6} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
       <group ref={grupo}>
         {puntos.map((p, i) => {
