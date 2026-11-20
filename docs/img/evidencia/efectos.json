@@ -1,0 +1,111 @@
+{
+  "_links": {
+    "self": {
+      "href": "https://horizon-testnet.stellar.org/transactions/9789094c217e84c3aeb28836751057e77f98bc36a7056af1fd72b3fc445dd532/effects?cursor=\u0026limit=50\u0026order=asc"
+    },
+    "next": {
+      "href": "https://horizon-testnet.stellar.org/transactions/9789094c217e84c3aeb28836751057e77f98bc36a7056af1fd72b3fc445dd532/effects?cursor=24946810732716033-4\u0026limit=50\u0026order=asc"
+    },
+    "prev": {
+      "href": "https://horizon-testnet.stellar.org/transactions/9789094c217e84c3aeb28836751057e77f98bc36a7056af1fd72b3fc445dd532/effects?cursor=24946810732716033-1\u0026limit=50\u0026order=desc"
+    }
+  },
+  "_embedded": {
+    "records": [
+      {
+        "_links": {
+          "operation": {
+            "href": "https://horizon-testnet.stellar.org/operations/24946810732716033"
+          },
+          "succeeds": {
+            "href": "https://horizon-testnet.stellar.org/effects?order=desc\u0026cursor=24946810732716033-1"
+          },
+          "precedes": {
+            "href": "https://horizon-testnet.stellar.org/effects?order=asc\u0026cursor=24946810732716033-1"
+          }
+        },
+        "id": "0024946810732716033-0000000001",
+        "paging_token": "24946810732716033-1",
+        "account": "GBUCIFBQHULSUAPO4BIZY35KMZNELNDYFOQCWW5SEHUA5PPQTB7EIG2B",
+        "type": "contract_debited",
+        "type_i": 97,
+        "created_at": "2026-11-19T05:19:10Z",
+        "asset_type": "credit_alphanum4",
+        "asset_code": "USDC",
+        "asset_issuer": "GCEF6VE63JVSWORNVYUY6P6DKKKPNAVYMBJJ2NYOGQNZVQR6T3DB5T62",
+        "contract": "CAE23TYOONXIZEHOYY4GZARITWVOFQBENRWHK7MCFM4Q7NRUJSVGVQR6",
+        "amount": "210.0000000"
+      },
+      {
+        "_links": {
+          "operation": {
+            "href": "https://horizon-testnet.stellar.org/operations/24946810732716033"
+          },
+          "succeeds": {
+            "href": "https://horizon-testnet.stellar.org/effects?order=desc\u0026cursor=24946810732716033-2"
+          },
+          "precedes": {
+            "href": "https://horizon-testnet.stellar.org/effects?order=asc\u0026cursor=24946810732716033-2"
+          }
+        },
+        "id": "0024946810732716033-0000000002",
+        "paging_token": "24946810732716033-2",
+        "account": "GAPB2PVH34632OQPDEDDDAEKKFLQSVS3O26XXSCHVQ3QWP42QCU6RVSG",
+        "type": "account_credited",
+        "type_i": 2,
+        "created_at": "2026-11-19T05:19:10Z",
+        "asset_type": "credit_alphanum4",
+        "asset_code": "USDC",
+        "asset_issuer": "GCEF6VE63JVSWORNVYUY6P6DKKKPNAVYMBJJ2NYOGQNZVQR6T3DB5T62",
+        "amount": "210.0000000"
+      },
+      {
+        "_links": {
+          "operation": {
+            "href": "https://horizon-testnet.stellar.org/operations/24946810732716033"
+          },
+          "succeeds": {
+            "href": "https://horizon-testnet.stellar.org/effects?order=desc\u0026cursor=24946810732716033-3"
+          },
+          "precedes": {
+            "href": "https://horizon-testnet.stellar.org/effects?order=asc\u0026cursor=24946810732716033-3"
+          }
+        },
+        "id": "0024946810732716033-0000000003",
+        "paging_token": "24946810732716033-3",
+        "account": "GBUCIFBQHULSUAPO4BIZY35KMZNELNDYFOQCWW5SEHUA5PPQTB7EIG2B",
+        "type": "contract_debited",
+        "type_i": 97,
+        "created_at": "2026-11-19T05:19:10Z",
+        "asset_type": "credit_alphanum4",
+        "asset_code": "USDC",
+        "asset_issuer": "GCEF6VE63JVSWORNVYUY6P6DKKKPNAVYMBJJ2NYOGQNZVQR6T3DB5T62",
+        "contract": "CAE23TYOONXIZEHOYY4GZARITWVOFQBENRWHK7MCFM4Q7NRUJSVGVQR6",
+        "amount": "70.0000000"
+      },
+      {
+        "_links": {
+          "operation": {
+            "href": "https://horizon-testnet.stellar.org/operations/24946810732716033"
+          },
+          "succeeds": {
+            "href": "https://horizon-testnet.stellar.org/effects?order=desc\u0026cursor=24946810732716033-4"
+          },
+          "precedes": {
+            "href": "https://horizon-testnet.stellar.org/effects?order=asc\u0026cursor=24946810732716033-4"
+          }
+        },
+        "id": "0024946810732716033-0000000004",
+        "paging_token": "24946810732716033-4",
+        "account": "GCLZLSFEDHBKYIY3GZR2AXDKEG5376SRBNUDXFLNTH2P2734HYPSXTGG",
+        "type": "account_credited",
+        "type_i": 2,
+        "created_at": "2026-11-19T05:19:10Z",
+        "asset_type": "credit_alphanum4",
+        "asset_code": "USDC",
+        "asset_issuer": "GCEF6VE63JVSWORNVYUY6P6DKKKPNAVYMBJJ2NYOGQNZVQR6T3DB5T62",
+        "amount": "70.0000000"
+      }
+    ]
+  }
+}

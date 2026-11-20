@@ -1,6 +1,8 @@
 "use client";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { MotionConfig } from "motion/react";
+import Revelar from "./Revelar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   type Deployment,
@@ -15,7 +17,6 @@ import {
   elegir,
   fmtUsdc,
   loadZone,
-  nivel,
   parseUsdc,
   quoteSplit,
   type Reparto,
@@ -26,41 +27,24 @@ import {
   NIVEL_NOMBRE,
   NIVEL_TEXTO,
   type Liberacion,
-  codigoUrl,
-  esV2,
-  esV3,
-  hayCruce,
+  esStellar,
+  BILLETERA_STELLAR,
 } from "@/lib/chain";
-import { CONF_NAME, SENSOR_COLOR, SENSOR_NAME } from "./Mapa";
+import { CONF_NAME, SENSOR_NAME } from "./Mapa";
 import Logo from "./Logo";
-import { IcoCalculo, IcoCandado, IcoCuartel, IcoDonar, IcoExterno, IcoLupa, IcoSatelite, IcoVerificado } from "./Iconos";
+import { IcoCalculo, IcoCandado, IcoOjo, IcoCuartel, IcoExterno, IcoSatelite, IcoVerificado } from "./Iconos";
 import Foto from "./Foto";
 import Espacio from "./Espacio";
-import { Gravedad, LLAMA_ADENTRO, LLAMA_AFUERA } from "./Llamas";
+import { Gravedad } from "./Llamas";
 import { cuartelCercano } from "@/lib/cuarteles";
-import { AMBIENTE, DEPTOS, RADIO_KM, canchas, departamentoDe, genteCerca } from "@/lib/zonas";
-import { AYUDA_VIVIENDA_ARS, COSTO_HA, HORA_AVION, RADIO_AFECTADOS_KM, calcular, climaEn, type Clima } from "@/lib/formula";
+import { canchas, departamentoDe } from "@/lib/zonas";
+import { climaEn, type Clima } from "@/lib/formula";
 import { HORAS_DATO_FRESCO, leerFocos } from "@/lib/focos";
 import { avisosGoes, rumbo, type Aviso } from "@/lib/goes";
-import { calibracion } from "@/lib/referencias";
-
-const cal = calibracion();
 
 /** Dólar oficial (venta) de DolarApi, solo como referencia en pesos. */
 type Dolar = { venta: number; fecha: string };
 const pesos = (usdc: bigint, d: Dolar) => Math.round((Number(usdc) / 1e6) * d.venta).toLocaleString("es-AR") + " pesos";
-/** Lo mismo con dólares comunes (número), para la fórmula de brasa. */
-const pesosUsd = (usd: number, d: Dolar) => Math.round(usd * d.venta).toLocaleString("es-AR") + " pesos";
-const usd = (x: number) => Math.round(x).toLocaleString("es-AR");
-/** Nombre a mostrar de un destinatario: "cuartel-a" pasa a "Cuartel A" y "entidad-a" a "Entidad de asistencia A". */
-const nombreDestinatario = (label: string, kind: "station" | "assistance") => {
-  const m = /^(?:cuartel|entidad)-([a-z0-9]+)$/i.exec(label);
-  if (!m) return label;
-  return `${kind === "station" ? "Cuartel" : "Entidad de asistencia"} ${m[1].toUpperCase()}`;
-};
-/** Cuántos AVAX son esos dólares (precio de CoinGecko), solo como referencia. */
-const enAvax = (usdNum: number, precio: number) =>
-  (usdNum / precio).toLocaleString("es-AR", { maximumFractionDigits: usdNum / precio < 100 ? 1 : 0 });
 
 const Mapa = dynamic(() => import("./Mapa"), { ssr: false, loading: () => <div className="mapa cargando">Cargando mapa…</div> });
 
@@ -70,36 +54,7 @@ type Tx =
   | { s: "ok"; hash: string }
   | { s: "error"; msg: string };
 
-const ALERTA = { bajo: "baja", medio: "media", alto: "alta", crítico: "crítica" } as const;
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
-
-/** "Datos de NASA del 10 y 11/11 (guardados)" o "actualizado hace 2 h" (en vivo). */
-function fechaDatos(f: Focos): string {
-  if (!f.datosGuardados) {
-    const h = Math.max(0, Math.round((Date.now() - new Date(f.generatedAt).getTime()) / 3600000));
-    const act = h < 1 ? "actualizado hace menos de 1 h" : `actualizado hace ${h} h`;
-    if (!f.ultimaDeteccionUtc) return `Datos de NASA en vivo: ${act}`;
-    // La hora del dato es la de la pasada del satélite (FIRMS tarda unas 3 h en publicarla), no la de la página.
-    const det = new Date(f.ultimaDeteccionUtc * 1000).toLocaleString("es-AR", {
-      day: "numeric",
-      month: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "America/Argentina/Salta",
-    });
-    // Si NASA no trae focos nuevos, el archivo queda con los anteriores: se avisa para no mostrar fuego viejo como actual.
-    const hDet = (Date.now() / 1000 - f.ultimaDeteccionUtc) / 3600;
-    const viejo = hDet > 6 ? ` · ⚠️ la última detección fue hace ${Math.round(hDet)} h` : "";
-    return `Datos de NASA en vivo · última detección: ${det} (hora argentina) · ${act}${viejo}`;
-  }
-  const dias = [...new Set(f.focos.map((x) => x.fecha))].sort();
-  if (dias.length === 0) return "Datos de NASA guardados";
-  const xs = dias.map((d) => ({ d: String(Number(d.slice(8, 10))), m: String(Number(d.slice(5, 7))) }));
-  const mismoMes = xs.every((x) => x.m === xs[0].m);
-  const partes = mismoMes ? xs.map((x) => x.d) : xs.map((x) => `${x.d}/${x.m}`);
-  const lista = partes.length > 1 ? `${partes.slice(0, -1).join(", ")} y ${partes[partes.length - 1]}` : partes[0];
-  return `Datos de NASA del ${lista}${mismoMes ? `/${xs[0].m}` : ""} (guardados)`;
-}
 
 function Hash({ d, h }: { d: Deployment; h: string }) {
   const u = txUrl(d, h);
@@ -141,7 +96,6 @@ export default function Brasa() {
   // Departamento del incendio elegido (se busca en el mapa de departamentos al tocarlo)
   const [deptoSel, setDeptoSel] = useState<{ id: number; lat: number; nombre: string | null } | null>(null);
 
-  const [avax, setAvax] = useState<number | null>(null);
   const [clima, setClima] = useState<{ id: number; c: Clima | null } | null>(null);
   const [goes, setGoes] = useState<{ avisos: Aviso[]; ultimo: string | null } | null>(null);
 
@@ -150,10 +104,6 @@ export default function Brasa() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => (j && j.venta > 0 ? setDolar({ venta: j.venta, fecha: j.fechaActualizacion }) : null))
       .catch(() => setDolar(null));
-    fetch("https://api.coingecko.com/api/v3/simple/price?ids=avalanche-2&vs_currencies=usd")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => (j?.["avalanche-2"]?.usd > 0 ? setAvax(j["avalanche-2"].usd) : null))
-      .catch(() => setAvax(null));
     // Alerta temprana GOES-19 (cada 10 min); se vuelve a leer cada 10 min.
     const leerGoes = () => avisosGoes().then(setGoes).catch(() => setGoes(null));
     leerGoes();
@@ -163,16 +113,16 @@ export default function Brasa() {
 
   // Datos de ejecucion (los genera otra parte)
   useEffect(() => {
-    // deployment.json lo escribe el deploy local (no va a git). En el sitio publicado se usa deployment.fuji.json,
-    // que sí está en el repo y apunta al contrato de Fuji.
-    // En producción se va directo a deployment.fuji.json: así la consola del sitio publicado no muestra un 404.
-    const leerFuji = () => fetch("/deployment.fuji.json", { cache: "no-store" }).then((r) => r.json());
+    // deployment.json lo escribe el deploy local (no va a git). En el sitio publicado se usa deployment.stellar.json,
+    // que sí está en el repo y apunta al contrato de la red de prueba de Stellar.
+    // En producción se va directo a ese archivo: así la consola del sitio publicado no muestra un 404.
+    const leerPublicado = () => fetch("/deployment.stellar.json", { cache: "no-store" }).then((r) => r.json());
     const leerDeploy = () =>
       process.env.NODE_ENV === "production"
-        ? leerFuji()
+        ? leerPublicado()
         : fetch("/deployment.json", { cache: "no-store" })
             .then((r) => (r.ok ? r.json() : Promise.reject()))
-            .catch(leerFuji);
+            .catch(leerPublicado);
     Promise.all([leerDeploy(), leerFocos()])
       .then(([d, f]) => {
         setDep(d);
@@ -200,7 +150,8 @@ export default function Brasa() {
         const v = k ? t[k] : [];
         const propias = Array.isArray(v) ? v : [];
         // Si este contrato todavía no liberó, se muestra el último pago de la versión anterior.
-        const otras = Object.values(t)
+        // En Stellar no: esos pagos son de otra red y su comprobante no está en este explorador.
+        const otras = (esStellar(dep) ? [] : Object.values(t))
           .filter((x): x is Liberacion[] => Array.isArray(x))
           .flat()
           .sort((a, b) => a.fecha.localeCompare(b.fecha));
@@ -210,7 +161,6 @@ export default function Brasa() {
       .catch(() => setLibs([]));
   }, [dep]);
 
-  const hot = focos ? confirmados(focos) : 0;
   const refreshZone = useCallback(() => {
     if (!dep || !focos) return;
     loadZone(dep, confirmados(focos))
@@ -218,12 +168,33 @@ export default function Brasa() {
         setZone(z);
         setZoneErr("");
       })
-      .catch(() => setZoneErr("No pude leer el contrato. ¿Está encendida la red?"));
+      .catch(() =>
+        setZoneErr("No pude leer el fondo ahora. La red de prueba de Stellar se reinicia de vez en cuando; el último pago quedó guardado en «Un pago, paso a paso»."),
+      );
   }, [dep, focos]);
   useEffect(refreshZone, [refreshZone]);
 
   // Billeteras instaladas: solo en el cliente. Si alguna ya está abierta en este sitio, se sigue con esa.
   useEffect(() => {
+    if (!dep) return;
+    if (esStellar(dep)) {
+      // En Stellar la billetera se elige en la ventana del kit. Si ya hay una cuenta conectada, se sigue con esa.
+      setHasWallet(true);
+      setWallets([BILLETERA_STELLAR]);
+      let sigue = true;
+      import("@/lib/stellar")
+        .then((m) => m.cuentaStellar(dep))
+        .then((a) => {
+          if (!sigue || !a) return;
+          setWalletId("stellar");
+          setAccount(a);
+          setChainId(dep.chainId);
+        })
+        .catch(() => {});
+      return () => {
+        sigue = false;
+      };
+    }
     const lista = billeteras();
     setHasWallet(lista.length > 0);
     setWallets(lista.map(({ id, nombre }) => ({ id, nombre })));
@@ -242,11 +213,11 @@ export default function Brasa() {
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [dep]);
 
   // Cuenta y red de la billetera elegida
   useEffect(() => {
-    if (!walletId) return;
+    if (!walletId || walletId === "stellar") return;
     const eth = elegir(walletId);
     if (!eth) return;
     const onAcc = (a: string[]) => setAccount(a[0] ?? null);
@@ -289,6 +260,18 @@ export default function Brasa() {
   }, [dep, monto, cubrir]);
 
   async function connect(id: Billetera["id"]) {
+    if (id === "stellar") {
+      if (!dep) return;
+      try {
+        const a = await (await import("@/lib/stellar")).conectarStellar(dep);
+        setWalletId("stellar");
+        setAccount(a);
+        setChainId(dep.chainId);
+      } catch (e) {
+        setTx({ s: "error", msg: errorCorto(e) });
+      }
+      return;
+    }
     const eth = elegir(id);
     if (!eth) return;
     setWalletId(id);
@@ -311,7 +294,7 @@ export default function Brasa() {
   async function onDonar() {
     if (!dep || monto === null || reparto === null || chainId !== dep.chainId) return;
     try {
-      setTx({ s: "pendiente", paso: "approve", hash: "" });
+      setTx({ s: "pendiente", paso: esStellar(dep) ? "donar" : "approve", hash: "" });
       const hash = await donar(dep, monto, cubrir, reparto.total, (st) => setTx({ s: "pendiente", paso: st.paso, hash: st.hash }));
       setTx({ s: "ok", hash });
       refreshZone();
@@ -320,19 +303,14 @@ export default function Brasa() {
     }
   }
 
-  // Provincia: "Alerta baja/media/alta/crítica" por focos confirmados. Cada incendio: "Nivel 1, 2, 3 · bajo/medio/alto".
-  const alerta = nivel(hot);
   // v2: lo pagado lo suma el contrato (zoneTotals). v1: lo anota el relayer en liberaciones.json.
   const delContrato = zone?.totalReleased != null ? Number(zone.totalReleased) / 1e6 : null;
   const anotado = libs.reduce((a, x) => a + x.liberadoUsdc, 0);
   // Mientras el contrato nuevo no libere, se muestra lo que ya pagó la versión anterior.
   const liberado = delContrato != null && !(delContrato === 0 && libAnterior) ? delContrato : anotado;
-  const deContrato = zone?.totalReleased != null;
   const ultimaLib = libs.length ? libs[libs.length - 1] : null;
   const pct = zone && zone.target > 0n ? Math.min(100, Number((zone.balance * 10000n) / zone.target) / 100) : 0;
   const f = sel !== null && focos ? focos.focos[sel] : null;
-  // Sin tope por evento: el v2 se despliega con un tope enorme; manda el monto calculado.
-  const sinTope = !!zone && zone.maxPerEvent >= 10n ** 30n;
   const inc = selInc !== null && focos?.incendios ? focos.incendios[selInc] : null;
   const deptoInc = inc && deptoSel?.id === inc.id && deptoSel.lat === inc.lat ? deptoSel.nombre : null;
   useEffect(() => {
@@ -349,7 +327,8 @@ export default function Brasa() {
   const total = reparto ? reparto.total : null;
   const sinSaldo = saldo !== null && total !== null && saldo < total;
   const busy = tx.s === "pendiente";
-  const redName = dep ? (dep.chainId === 43113 ? "Avalanche Fuji" : `red local (${dep.chainId})`) : "";
+  const stellar = !!dep && esStellar(dep);
+  const redName = dep ? (stellar ? "la red de prueba de Stellar" : dep.chainId === 43113 ? "Avalanche Fuji" : `red local (${dep.chainId})`) : "";
 
   const nInc = focos?.incendios?.length ?? 0;
   const puntosGlobo = useMemo(() => (focos?.incendios ?? []).map((x) => ({ lat: x.lat, lon: x.lon, nivel: x.nivel })), [focos]);
@@ -365,1071 +344,528 @@ export default function Brasa() {
         })
       : null;
   const detViejo = enVivo ? vivoViejo : null;
-  // El contrato no envía con menos focos cruzados que el mínimo de la zona (v2: 2).
-  const bajoMinimo = !!zone && zone.minHotspots > 0 && zone.hotspots < zone.minHotspots;
   const nConf = focos?.incendios?.filter((x) => x.confirmado).length ?? 0;
-  const donaciones = zone ? zone.eventos.filter((e) => e.tipo === "Donated").length : 0;
-  const neto = reparto ? Number(reparto.net) / 1e6 : null;
-  // Costo por hectárea y reparto: se leen del contrato (v2: 320 y 70 / 15 / 15; v3: 400 y 70 / 10 / 20).
-  // Las constantes solo se usan mientras el contrato no respondió.
-  const costoHaUsd = zone && zone.costoHa > 0n ? Number(zone.costoHa) / 1e6 : COSTO_HA;
-  const pz =
-    zone && zone.costoHa > 0n
-      ? {
-          combate: Number((zone.costosHa.combate * 1000n) / zone.costoHa) / 10,
-          logistica: Number((zone.costosHa.logistica * 1000n) / zone.costoHa) / 10,
-          asistencia: Number((zone.costosHa.asistencia * 1000n) / zone.costoHa) / 10,
-        }
-      : { combate: 70, logistica: 10, asistencia: 20 };
-  const pctTxt = (n: number) => n.toLocaleString("es-AR", { maximumFractionDigits: 1 });
-  // Qué cubre la donación con la regla del fondo (costo por hectárea del contrato). Cancha de fútbol: 105 × 68 m.
-  const m2 = neto !== null ? Math.round((neto / costoHaUsd) * 10000) : null;
   // Donación mínima: la lee del contrato (minDonation()). El contrato compara contra lo que llega al fondo.
   const minDon = zone?.minDonation ?? null;
   const bajoMinDon = minDon !== null && reparto !== null && reparto.net < minDon;
-  // v3: cuarteles que la federación asignó a la zona. Sin asignación vigente, el fondo no paga.
-  const v3 = !!dep && esV3(dep);
-  const asignacionVigente = v3 && !!zone && zone.responders.length > 0 && zone.respondersUntil * 1000 > Date.now();
-  const asignados = new Set(asignacionVigente && zone ? zone.responders.map((x) => x.toLowerCase()) : []);
-  const pasoWallet = hasWallet && !!account;
-  const pasoRed = pasoWallet && netOk;
-  const pasoListo = tx.s === "ok";
   const compartir = `Doné a los bomberos y a los damnificados por los incendios con brasa: la ayuda llega cuando dos satélites confirman el fuego. ${typeof window !== "undefined" ? window.location.origin : "https://brasafund.vercel.app"}`;
 
+  // ---- Portada clara: seis secciones. El detalle vive en /fundamentos. ----
+  const btn =
+    "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full border-0 px-6 text-base font-semibold no-underline transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50";
+  const btnPrimario = `${btn} bg-accion text-white shadow-[0_10px_28px_-10px_rgba(27,95,174,.6)] hover:bg-accion-oscura`;
+  const btnSecundario = `${btn} border border-solid border-linea bg-white text-tinta hover:border-tinta/40`;
+  const tarjeta = "rounded-3xl border border-solid border-linea bg-white shadow-[0_1px_2px_rgba(28,23,20,.04),0_16px_40px_-20px_rgba(28,23,20,.16)]";
+  const eyebrow = "m-0 font-display text-sm font-semibold uppercase tracking-[.14em] text-verde";
+  const titulo = "m-0 mt-2 font-display text-3xl font-bold leading-[1.05] tracking-tight text-tinta md:text-5xl";
+  const bajada = "m-0 mt-4 max-w-2xl text-lg leading-relaxed text-tinta-2";
+  const seccion = "mx-auto w-full max-w-6xl px-5 py-16 md:py-24";
+  const enlace = "font-semibold text-tinta underline decoration-accion decoration-2 underline-offset-4 hover:text-accion-oscura";
+  const PASOS = [
+    { n: "01", t: "Detecta", d: "Dos satélites de la NASA tienen que ver el mismo fuego. Seis capas descartan lo que no es un incendio.", ico: <IcoSatelite size={26} /> },
+    { n: "02", t: "Calcula", d: "Una regla pública dice cuánto hace falta para combatirlo, con la fuente de cada número.", ico: <IcoCalculo size={26} /> },
+    { n: "03", t: "Envía", d: "El contrato paga solo al cuartel asignado y a los damnificados. Sin intermediarios.", ico: <IcoCuartel size={26} /> },
+  ];
+  const CIFRAS = [
+    { n: "2", t: "satélites tienen que ver el mismo fuego" },
+    { n: "2", t: stellar ? "oráculos independientes por cada pago" : "firmas independientes por cada pago" },
+    { n: "0", t: "funciones de retiro en el contrato" },
+    { n: "6", t: "capas de detección antes de pagar" },
+  ];
+  // Las tres dudas de quien va a donar. Cada respuesta sale de lo que el contrato hace hoy.
+  const DUDAS = [
+    { p: "¿Adónde va mi donación?", r: "Al fondo de la zona, que es un contrato público. La comisión de 5 % se ve antes de confirmar y no puede subir." },
+    { p: "¿Y si no hay incendio?", r: "Tu donación queda en el fondo hasta el próximo incendio confirmado. Nadie puede retirarla: el contrato no tiene esa función. Por eso tampoco hay devoluciones." },
+    { p: "¿Cómo lo compruebo?", r: "Cada pago queda en un registro público con fecha, monto y destinatario. Acá abajo tenés el enlace para verlo vos." },
+  ];
+
   return (
-    <>
-      <header className="barra">
-        <div className="barra-in">
-          <Link href="/" className="barra-logo" aria-label="Inicio de brasa">
-            <Logo height={40} />
+    <MotionConfig reducedMotion="user">
+      <header className="sticky top-0 z-[1100] border-0 border-b border-solid border-linea/70 bg-papel/85 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5">
+          <Link href="/" className="inline-flex items-center rounded-xl" aria-label="Inicio de brasa">
+            <Logo height={34} claro />
           </Link>
-          <nav className="menu" aria-label="Secciones">
-            <a href="#mapa">Mapa</a>
-            <Link href="/fundamentos">Fundamentos</Link>
-            <a href="#donar" className="menu-cta">
-              Donar
-            </a>
+          <nav className="flex items-center gap-0.5 whitespace-nowrap text-[15px] font-medium sm:gap-1" aria-label="Secciones">
+            <a href="#como" className="hidden rounded-full px-3 py-2 text-tinta-2 no-underline hover:bg-papel-2 hover:text-tinta sm:inline-flex">Cómo funciona</a>
+            <a href="#mapa" className="hidden rounded-full px-3 py-2 text-tinta-2 no-underline hover:bg-papel-2 hover:text-tinta sm:inline-flex">Mapa</a>
+            <Link href="/fundamentos" className="rounded-full px-2 py-2 text-tinta-2 no-underline hover:bg-papel-2 hover:text-tinta sm:px-3">Fundamentos</Link>
+            <a href="#donar" className={`${btnPrimario} ml-1 min-h-10 px-5 text-[15px]`}>Donar</a>
           </nav>
         </div>
       </header>
-      <Espacio puntos={puntosGlobo} enVivo={enVivo && !detViejo} />
-    <main id="inicio">
 
-      <section className="hero" aria-label="Qué está pasando">
-        <div className="hero-texto">
-          <p className="antetitulo">
-            {enVivo && !detViejo && <span className="punto-vivo" aria-hidden="true" />} Salta · {!enVivo ? "datos guardados" : detViejo ? `último dato del ${detViejo}` : "hoy"}
-          </p>
-          <h1 className="titular">
-            Tu donación llega. <span className="acento">Podés comprobarlo.</span>
-          </h1>
-          <p className="bajada">
-            Con satélites de la NASA, brasa detecta los incendios desde el espacio y calcula cuánto cuesta combatirlos. Tu aporte llega sin
-            intermediarios a los bomberos y a los damnificados. Cada dólar queda registrado de punta a punta.
-          </p>
-          <div className="hero-acciones">
-            <a className="btn btn-hero" href="#donar">
-              Donar ahora
-            </a>
-            <a className="btn btn-sec" href="#mapa">
-              Ver el mapa
-            </a>
-          </div>
-          <div className="montos-rapidos" role="group" aria-label="Elegí un monto para donar">
-            <span>o elegí un monto:</span>
-            {[10, 25, 50].map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => {
-                  setAmount(String(v));
-                  document.getElementById("donar")?.scrollIntoView({ block: "start" });
-                }}
-              >
-                {v} USDC
-              </button>
-            ))}
-          </div>
-          <ul className="sellos" aria-label="Garantías">
-            <li><IcoVerificado size={16} /> Contrato verificado</li>
-            <li><IcoCandado size={16} /> Sin función de retiro</li>
-            <li><IcoSatelite size={16} /> Datos de la NASA</li>
-          </ul>
+      <main id="inicio" className="m-0 max-w-none bg-papel p-0 font-sans text-tinta">
+        {/* 1 · Inicio: la ventana al espacio */}
+        <div className="ventana mx-auto max-w-[1400px] px-3 pt-3 md:px-5 md:pt-5">
+          <Espacio puntos={puntosGlobo} enVivo={enVivo && !detViejo} />
         </div>
 
-        <div className="meta" role="region" aria-label="La meta">
-          <p className="estado-vivo">
-            {!focos ? (
-              "Mirando el cielo de Salta…"
-            ) : nInc === 0 ? (
-              enVivo && !detViejo ? "Hoy los satélites no ven incendios en Salta" : "Los satélites no vieron incendios en Salta"
-            ) : (
-              <>
-                Los satélites {detViejo ? "vieron" : "ven"} <span className="fuego-num">{nInc}</span>{" "}
-                {nInc === 1 ? "incendio" : "incendios"} en Salta
-              </>
-            )}
-          </p>
-          {focos && <p className="mini fecha-dato">{fechaDatos(focos)}</p>}
-          <p className="meta-tit">La meta para combatir el fuego</p>
-          {zoneErr && <p className="error">{zoneErr}</p>}
-          {!zone && !zoneErr && <p className="mini">Leyendo el fondo…</p>}
-          {zone && (
-            <>
-              <div className="meta-num">
-                <b>
-                  <Cuenta n={Number(zone.balance) / 1e6} />
-                </b>
-                <span>recaudados de {fmtUsdc(zone.target)} USDC</span>
-              </div>
-              <div className="apagando">
-                <div
-                  className="progreso"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(pct)}
-                  aria-label="Recaudado para la meta"
-                >
-                  <i style={{ width: `${Math.max(pct, zone.balance > 0n ? 1 : 0)}%` }} />
-                  <span className="pct">{Math.floor(pct)} %</span>
+        {loadErr && <p className="error mx-auto mt-6 max-w-6xl">{loadErr}</p>}
+
+        {/* 2 · Cómo funciona */}
+        <section id="como" className={seccion} aria-labelledby="como-tit">
+          <Revelar>
+            <p className={eyebrow}>Cómo funciona</p>
+            <h2 id="como-tit" className={titulo}>Tres pasos. Ningún intermediario.</h2>
+          </Revelar>
+          <ol className="m-0 mt-10 grid list-none gap-4 p-0 md:grid-cols-3">
+            {PASOS.map((p, i) => (
+              <Revelar key={p.n} demora={i * 0.08} como="li" className={`${tarjeta} p-7`}>
+                <div className="flex items-center justify-between">
+                  <span className="grid size-12 place-items-center rounded-2xl bg-verde-suave text-verde">{p.ico}</span>
+                  <span className="font-display text-sm font-semibold tracking-widest text-tinta-3">{p.n}</span>
                 </div>
-                {pct >= 100 ? (
-                  <span className="apagado" aria-hidden="true">✔</span>
-                ) : (
-                  <svg viewBox="18 2 64 92" className="fueguito" aria-hidden="true" style={{ transform: `scale(${1 - pct / 125})` }}>
-                    <path d={LLAMA_AFUERA} fill="#FF5A1F" />
-                    <path d={LLAMA_ADENTRO} fill="#FFB000" />
-                  </svg>
-                )}
-              </div>
-              <p className="mini">
-                {pct >= 100
-                  ? "¡Meta cubierta! Los cuarteles tienen para combustible, traslados y comida. Los damnificados reciben ayuda directa."
-                  : "Cada donación achica la llama. Cuando llega al 100 %, se apaga."}
-              </p>
-              {bajoMinimo && (
-                <p className="aviso-minimo" role="note">
-                  {zone.hotspots === 0
-                    ? "Ningún foco"
-                    : `${zone.hotspots} ${zone.hotspots === 1 ? "foco confirmado" : "focos confirmados"}`}{" "}
-                  por los dos satélites: el fondo pide al menos <b>{zone.minHotspots}</b> para enviar. Lo que dones queda
-                  guardado para el próximo incendio confirmado.
-                </p>
-              )}
-              {!bajoMinimo && zone.target > zone.balance && (
-                <p className="falta">
-                  Faltan <b>{fmtUsdc(zone.target - zone.balance)} USDC</b>
-                  {avax && <> · ≈ {enAvax(Number(zone.target - zone.balance) / 1e6, avax)} AVAX</>}
-                  {dolar && <> · ≈ {pesos(zone.target - zone.balance, dolar)}</>}
-                </p>
-              )}
-              <ul className="meta-datos">
-                <li>
-                  <b>
-                    <Cuenta n={nConf} />
-                  </b>
-                  <span>{nConf === 1 ? "incendio confirmado" : "incendios confirmados"}</span>
-                </li>
-                <li>
-                  <b>
-                    <Cuenta n={Number(zone.areaHa)} />
-                  </b>
-                  <span>hectáreas con fuego</span>
-                </li>
-                <li>
-                  <b>
-                    <Cuenta n={liberado} />
-                  </b>
-                  <span>USDC ya enviados a bomberos y damnificados</span>
-                </li>
-              </ul>
-              <details className="cuenta-meta">
-                <summary>¿De dónde sale la meta?</summary>
-                <p className="mini">
-                  {zone.hotspots} {zone.hotspots === 1 ? "foco" : "focos"} de fuego que ven los dos satélites × 14 ha = {zone.areaHa.toString()} ha,
-                  y cada hectárea cuesta {fmtUsdc(zone.costoHa)} USDC:
-                </p>
-                <ul className="desglose">
-                  <li><span>Apagar el fuego <small>({fmtUsdc(zone.costosHa.combate)} USDC por ha · {pctTxt(pz.combate)} %)</small></span><Monto v={fmtUsdc(zone.combate)} /></li>
-                  <li><span>Traslados y comida <small>({fmtUsdc(zone.costosHa.logistica)} USDC por ha · {pctTxt(pz.logistica)} %)</small></span><Monto v={fmtUsdc(zone.logistica)} /></li>
-                  <li><span>Ayuda a los vecinos <small>({fmtUsdc(zone.costosHa.asistencia)} USDC por ha · {pctTxt(pz.asistencia)} %)</small></span><Monto v={fmtUsdc(zone.asistencia)} /></li>
-                  <li className="total"><span>Meta</span><Monto v={fmtUsdc(zone.target)} /></li>
-                </ul>
-                <div className="mini fuente-meta">
-                  <p>
-                    <b>De dónde sale.</b> La base sale de fuentes oficiales de Chile y Estados Unidos. Le propusimos al
-                    Comandante Mayor del Cuartel de Bomberos Voluntarios de Salta subirla a 400 USD por hectárea. Estuvo de
-                    acuerdo: es una operación muy costosa. Este contrato
-                    usa <b>{fmtUsdc(zone.costoHa)} USDC por hectárea</b>. La fórmula de brasa se calibra con el costo oficial de{" "}
-                    <b>{cal.casos} temporadas de grandes incendios</b>: cada hectárea costó de {Math.round(cal.min)} a{" "}
-                    {Math.round(cal.max).toLocaleString("es-AR")} USD.
-                  </p>
-                  <p>
-                    El {pctTxt(pz.combate)} % para apagar el fuego sale del gasto real de Chile en 2023, donde el combate fue el 69 %.
-                    Del resto, {pctTxt(pz.logistica)} % va a traslados y comida. Otro {pctTxt(pz.asistencia)} % va a los damnificados.
-                    El paso siguiente es calibrarlo con las facturas de los cuarteles de Salta.{" "}
-                    <Link href="/fundamentos#formula">Ver los {cal.casos} casos y la cuenta completa</Link>
-                  </p>
-                </div>
-                <p className="mini">
-                  {bajoMinimo
-                    ? `Con menos de ${zone.minHotspots} focos confirmados el fondo no envía nada: así un foco aislado no libera un pago.`
-                    : zone.balance === 0n
-                    ? "El fondo está vacío: cada donación lo llena para cuando dos satélites confirmen el fuego."
-                    : `Si dos satélites confirman, se envían hasta ${fmtUsdc([zone.target, zone.maxPerEvent, zone.balance].reduce((a, b) => (b < a ? b : a)))} USDC (la meta o lo recaudado, lo que sea menor).`}
-                  {!sinTope && ` Tope por vez: ${fmtUsdc(zone.maxPerEvent)} USDC.`}{" "}
-                  <Link href="/fundamentos#formula">Ver la explicación completa</Link>
-                </p>
-                {zone.totalDonated != null && zone.totalReleased != null && (
-                  <p className="mini">
-                    Desde el comienzo entraron <b>{fmtUsdc(zone.totalDonated)} USDC</b> y se enviaron <b>{fmtUsdc(zone.totalReleased)} USDC</b>.
-                  </p>
-                )}
-              </details>
-            </>
-          )}
-        </div>
-      </section>
-
-      <section className="prueba" aria-labelledby="prueba-tit">
-        <div className="prueba-texto">
-          <p className="eyebrow">Ya funciona</p>
-          {ultimaLib ? (
-            <>
-              <h2 id="prueba-tit" className="sec-tit">
-                La primera ayuda ya llegó, <em>con datos reales de la NASA</em>
-              </h2>
-              <p className="prueba-bajada">
-                Dos satélites confirmaron el fuego. Dos operadores firmaron el dato por separado. El contrato envió la ayuda solo,
-                sin que nadie la tocara en el camino.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 id="prueba-tit" className="sec-tit">Reglas públicas, escritas en un contrato que cualquiera puede leer</h2>
-              <p className="prueba-bajada">
-                El fondo solo envía ayuda cuando dos satélites confirman el fuego. Nadie puede cambiar esa regla a escondidas.
-              </p>
-            </>
-          )}
-          <ul className="cifras">
-            <li><b>2</b><span>satélites tienen que ver el mismo fuego</span></li>
-            <li><b>2</b><span>firmas independientes para cada pago</span></li>
-            <li><b>0</b><span>funciones de retiro en el contrato</span></li>
-            <li><b>5 %</b><span>de comisión máxima, siempre a la vista</span></li>
-          </ul>
-        </div>
-        {ultimaLib && dep && (
-          <div className="recibo" aria-label="Comprobante de la última liberación">
-            <header>
-              <b>Liberación en vivo #{ultimaLib.eventId}</b>
-              <span>
-                {new Date(ultimaLib.fecha).toLocaleString("es-AR", {
-                  day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-                  timeZone: "America/Argentina/Salta",
-                })}
-              </span>
-            </header>
-            <dl>
-              <div><dt>Focos vistos por dos satélites</dt><dd>{ultimaLib.focos}</dd></div>
-              <div><dt>Firmas de oráculos</dt><dd>2 de 2</dd></div>
-              <div>
-                <dt>A cuarteles de bomberos</dt>
-                <dd className="mas">+ {(ultimaLib.cuartelesUsdc ?? (ultimaLib.liberadoUsdc * (pz.combate + pz.logistica)) / 100).toLocaleString("es-AR", { maximumFractionDigits: 2 })} USDC</dd>
-              </div>
-              <div>
-                <dt>A familias damnificadas</dt>
-                <dd className="mas">+ {(ultimaLib.asistenciaUsdc ?? (ultimaLib.liberadoUsdc * pz.asistencia) / 100).toLocaleString("es-AR", { maximumFractionDigits: 2 })} USDC</dd>
-              </div>
-            </dl>
-            <a className="recibo-ok" href={txUrl(dep, ultimaLib.tx)} target="_blank" rel="noreferrer">
-              <IcoVerificado size={18} /> Ver el comprobante en Avalanche <IcoExterno />
-            </a>
-            <p className="recibo-nota">
-              {libAnterior
-                ? "Operación real en Avalanche, hecha con la versión anterior del contrato. Queda registrada para siempre."
-                : "Operación real en Avalanche. Queda registrada para siempre."}
-            </p>
-          </div>
-        )}
-      </section>
-
-      <section className="herramientas" aria-labelledby="herr-tit">
-        <p className="eyebrow">Qué hacemos</p>
-        <h2 id="herr-tit" className="sec-tit">Cuatro herramientas para que la ayuda llegue entera y a tiempo</h2>
-        <p className="herr-bajada">
-          Ante un incendio, la ayuda suele tardar días, nadie sabe cuánto hace falta y el dinero pasa por intermediarios. Con
-          brasa, esos tres problemas se resuelven a la vez.
-        </p>
-        <div className="herr-grid">
-          <article className="herr">
-            <span className="ico" aria-hidden="true"><IcoSatelite /></span>
-            <h3>Detecta y confirma el fuego</h3>
-            <p>
-              El satélite GOES-19 avisa en minutos. Dos satélites de la NASA tienen que ver el fuego en el mismo lugar para
-              confirmarlo: así se filtran las falsas alarmas.
-            </p>
-            <a href="#mapa" className="comprobante">Ver el mapa en vivo</a>
-          </article>
-          <article className="herr herr-destacada">
-            <span className="ico" aria-hidden="true"><IcoCalculo /></span>
-            <h3>Calcula el daño y cuánto hace falta</h3>
-            <p>
-              Para cada incendio estima el costo de combatirlo y la ayuda para los damnificados: superficie, fuerza del fuego,
-              clima, tipo de bosque, avión hidrante y casas cerca, cada número con su fuente.
-            </p>
-            <div className="ejemplo-calculo" aria-label="Ejemplo de cálculo">
-              <small>Ejemplo real · incendio de nivel 3 en Rivadavia, Salta (210 ha) · estimación ampliada (referencia)</small>
-              <ul>
-                <li><span>Combatir el fuego</span><b>181.440</b></li>
-                <li><span>Avión hidrante (6 h)</span><b>24.000</b></li>
-                <li><span>Damnificados (6 casas)</span><b>3.060</b></li>
-                <li className="total"><span>Estimación ampliada</span><b>≈ 208.500 USDC</b></li>
-              </ul>
-              <small>El contrato paga con la regla simple: focos confirmados × 14 ha × costo por hectárea.</small>
-            </div>
-            <Link href="/fundamentos#formula" className="comprobante">Ver la fórmula y sus fuentes</Link>
-          </article>
-          <article className="herr">
-            <span className="ico" aria-hidden="true"><IcoCuartel /></span>
-            <h3>Envía directo a bomberos y damnificados</h3>
-            <p>
-              El contrato paga directo a billeteras verificadas. Reparte {pctTxt(pz.combate)} % para el combate,{" "}
-              {pctTxt(pz.logistica)} % para traslados y comida, {pctTxt(pz.asistencia)} % para los damnificados.
-            </p>
-            <a href="#donar" className="comprobante">Donar ahora</a>
-          </article>
-          <article className="herr">
-            <span className="ico ico-verde" aria-hidden="true"><IcoLupa /></span>
-            <h3>Todo trazable, nada se pierde</h3>
-            <p>
-              Cada dólar queda registrado desde tu billetera hasta su destino, en un registro público que nadie puede borrar.
-              Cualquiera puede comprobar adónde fue.
-            </p>
-            <a href="#traza" className="comprobante">Seguí tu donación</a>
-          </article>
-        </div>
-      </section>
-
-      <section className="traza" id="traza" aria-labelledby="traza-tit">
-        <p className="eyebrow">Trazabilidad</p>
-        <h2 id="traza-tit" className="sec-tit">Seguí tu donación de punta a punta</h2>
-        <p className="traza-bajada">
-          En una colecta común el dinero pasa por varias manos. Acá va del fondo a quien lo necesita, sin escalas. Cada paso
-          queda en un registro público que nadie puede borrar.
-        </p>
-        <ol className="traza-pasos">
-          <li>
-            <span className="ico" aria-hidden="true"><IcoDonar /></span>
-            <b><em>01</em> Donás</b>
-            <small>Tu aporte entra al fondo de la zona en segundos. La comisión de 5 % se ve antes de confirmar.</small>
-            {(() => {
-                const d = zone?.eventos.find((e) => e.tipo === "Donated");
-                const u = dep && d ? txUrl(dep, d.tx) : dep ? addrUrl(dep, dep.fund) : "";
-                return u ? (
-                  <a href={u} target="_blank" rel="noreferrer" className="comprobante">
-                    {d ? "Ver la última donación" : "Ver el registro"} <IcoExterno />
-                  </a>
-                ) : null;
-              })()}
-          </li>
-          <li>
-            <span className="ico" aria-hidden="true"><IcoCandado /></span>
-            <b><em>02</em> Queda protegido</b>
-            <small>El fondo no tiene función de retiro: nadie puede sacarlo para otra cosa. Cada pago necesita dos firmas y queda a la vista.</small>
-            {dep && codigoUrl(dep) && (
-              <a href={codigoUrl(dep)} target="_blank" rel="noreferrer" className="comprobante">
-                Ver el código verificado <IcoExterno />
-              </a>
-            )}
-          </li>
-          <li>
-            <span className="ico" aria-hidden="true"><IcoSatelite /></span>
-            <b><em>03</em> Los satélites confirman</b>
-            <small>Dos satélites de la NASA tienen que ver el fuego en el mismo lugar. Después, dos operadores independientes verifican el dato y lo firman por separado.</small>
-            <a href="#mapa" className="comprobante">Ver el mapa</a>
-          </li>
-          <li>
-            <span className="ico" aria-hidden="true"><IcoCuartel /></span>
-            <b><em>04</em> Llega a quien lo necesita</b>
-            <small>
-              El contrato reparte solo: {pctTxt(pz.combate)} % para el combate, {pctTxt(pz.logistica)} % para traslados y comida,{" "}
-              {pctTxt(pz.asistencia)} % para los damnificados.
-            </small>
-            <Link href="/fundamentos#formula" className="comprobante">Ver la fórmula</Link>
-          </li>
-          <li>
-            <span className="ico" aria-hidden="true"><IcoLupa /></span>
-            <b><em>05</em> Cualquiera lo comprueba</b>
-            <small>Donación, liberación y destino quedan registrados para siempre. Nada se pierde en el camino.</small>
-            {dep && addrUrl(dep, dep.fund) && (
-              <a href={addrUrl(dep, dep.fund)} target="_blank" rel="noreferrer" className="comprobante">
-                Ver todos los movimientos <IcoExterno />
-              </a>
-            )}
-          </li>
-        </ol>
-        {zone && zone.totalDonated != null && zone.totalReleased != null && (
-          <div className="traza-vivo" aria-label="Cifras del fondo, leídas del contrato">
-            <span className="vivo-tag"><i aria-hidden="true" /> En vivo, leído del contrato</span>
-            <dl>
-              <div><dt>Donado</dt><dd><Monto v={fmtUsdc(zone.totalDonated)} /></dd></div>
-              <div><dt>En el fondo</dt><dd><Monto v={fmtUsdc(zone.balance)} /></dd></div>
-              <div><dt>Enviado a bomberos y damnificados</dt><dd><Monto v={fmtUsdc(zone.totalReleased)} /></dd></div>
-            </dl>
-          </div>
-        )}
-        <p className="mini">
-          {dep && codigoUrl(dep) && (
-            <>
-              <a href={codigoUrl(dep)} target="_blank" rel="noreferrer" className="link-verificado">
-                <IcoVerificado size={18} /> Código del fondo público y verificado <IcoExterno />
-              </a>{" "}
-              ·{" "}
-            </>
-          )}
-          <Link href="/fundamentos">Cómo funciona por dentro</Link>
-        </p>
-      </section>
-
-      {loadErr && <p className="error">{loadErr}</p>}
-
-      <div className="cols">
-        <section aria-label="Mapa" id="mapa">
-          <h2 className="sec-tit">El mapa del fuego</h2>
-          {focosEj && focosVivo && !focosVivo.datosGuardados && (
-            <div className="vista" role="group" aria-label="Qué datos ver">
-              <button className={ver === "vivo" ? "on" : ""} aria-pressed={ver === "vivo"} onClick={() => cambiarVista("vivo")}>
-                {vivoViejo ? `Último dato (${vivoViejo})` : "Hoy, en vivo"}
-              </button>
-              <button className={ver === "ejemplo" ? "on" : ""} aria-pressed={ver === "ejemplo"} onClick={() => cambiarVista("ejemplo")}>
-                Ejemplo con los tres niveles
-              </button>
-            </div>
-          )}
-          {ver === "ejemplo" && focosEj && (
-            <p className="aviso-ejemplo">
-              Estás viendo un ejemplo: datos reales de la NASA del 10 y 11/11, con incendios de los tres niveles. La meta muestra lo
-              que costaría. Solo se envían fondos con los datos de hoy.
-            </p>
-          )}
-          <Mapa
-            focos={focos}
-            seleccionado={selInc}
-            onFoco={(i) => {
-              setSel(i);
-              setSelInc(null);
-            }}
-            onIncendio={(i) => {
-              setSelInc(i);
-              setSel(null);
-            }}
-            onZona={() => {
-              setSel(null);
-              setSelInc(null);
-            }}
-            avisos={ver === "vivo" ? goes?.avisos : undefined}
-          />
-          <p className="toca">👆 Tocá una llama para ver dónde es, a cuánta gente afecta y cuánto hace falta.</p>
-          <ul className="leyenda">
-            {([1, 2, 3] as const).map((n) => (
-              <li key={n}>
-                <Gravedad nivel={n} px={16} /> {NIVEL_TEXTO[n]}
-              </li>
+                <h3 className="m-0 mt-6 font-display text-2xl font-bold tracking-tight text-tinta">{p.t}</h3>
+                <p className="m-0 mt-2 text-[17px] leading-relaxed text-tinta-2">{p.d}</p>
+              </Revelar>
             ))}
-            <li>
-              <span className="aviso-goes chico" aria-hidden="true" /> Aviso rápido: posible fuego, todavía sin confirmar
-            </li>
-          </ul>
-          {ver === "vivo" && (
-            <p className={`alerta-temprana${goes && goes.avisos.length > 0 ? " hay" : ""}`} role="status">
-              <b>⏱️ Aviso rápido (cada 10 minutos):</b>{" "}
-              {!goes
-                ? "mirando…"
-                : goes.avisos.length === 0
-                  ? "no hay posibles fuegos nuevos en Salta en la última hora."
-                  : `${goes.avisos.length} ${goes.avisos.length === 1 ? "posible fuego nuevo" : "posibles fuegos nuevos"} en Salta en la última hora.`}
-              {goes?.ultimo && (
-                <small>
-                  Última foto del satélite GOES-19:{" "}
-                  {new Date(goes.ultimo).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Salta" })}{" "}
-                  (hora argentina). Avisa en minutos, pero los fondos se envían recién cuando la NASA confirma.
-                </small>
-              )}
-            </p>
-          )}
-          <details className="curiosos">
-            <summary>Para curiosos: qué ve cada satélite</summary>
-            {focos && (
-              <>
-                <p className="mini">
-                  Alerta de la provincia: <span className={`nivel zona n-${alerta}`}>{ALERTA[alerta]}</span>
-                </p>
-                <ul className="conteo">
-                  {(Object.keys(SENSOR_NAME) as (keyof typeof SENSOR_NAME)[]).map((k) => (
-                    <li key={k}>
-                      <strong>{focos.conteo[k].altaConfianza}</strong> focos seguros de {SENSOR_NAME[k]}
-                      <small> (de {focos.conteo[k].total} en total)</small>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mini">
-                  {hayCruce(focos)
-                    ? `Para la meta cuentan solo los focos que ven los dos satélites NOAA a menos de 2 km: ${hot}.`
-                    : `Para la meta cuentan los focos seguros del satélite NOAA que menos ve: ${hot}.`}{" "}
-                  Los niveles se calculan con los focos de cada incendio (un foco ≈ 14 ha).
-                </p>
-                {zone && (
-                  <p className="mini">
-                    Sumando todos los incendios del mapa, aunque los vea un solo satélite, serían unas{" "}
-                    {(focos.incendios ?? []).reduce((a, x) => a + x.areaHa, 0).toLocaleString("es-AR")} ha. Esa cifra orienta, pero no
-                    mueve fondos.
-                  </p>
-                )}
-              </>
-            )}
-            <p className="mini">
-              Fuentes: NASA FIRMS (satélites NOAA-20, NOAA-21 y MODIS), GOES-19 (NOAA) por el programa Queimadas del INPE,
-              Esri World Imagery, AWS Terrain Tiles, geoBoundaries (IGN) y Censo 2022 (INDEC).
-            </p>
-          </details>
+          </ol>
         </section>
 
-        <section className="panel" aria-label="Detalle y donación">
-          {inc && (
-            <div className="card foco" style={{ borderColor: NIVEL_COLOR[inc.nivel] }}>
-              <button className="cerrar" onClick={() => setSelInc(null)} aria-label="Cerrar el incendio">
-                ✕
-              </button>
-              <h2>
-                Incendio {inc.id}
-                {deptoInc && <> en {deptoInc}</>}
-              </h2>
-              <p className="grav-linea">
-                <Gravedad nivel={inc.nivel} px={28} />
-                <span className="nivel" style={{ background: NIVEL_COLOR[inc.nivel] }}>
-                  Nivel {inc.nivel} · {NIVEL_NOMBRE[inc.nivel]}
-                </span>
-                <span className={`sello ${inc.confirmado ? "si" : "no"}`}>
-                  {inc.confirmado ? "✔ Confirmado por dos satélites" : "Lo ve un solo satélite"}
-                </span>
-              </p>
-              {(() => {
-                const d = deptoInc ? DEPTOS[deptoInc] : null;
-                const amb = d ? AMBIENTE[d.ambiente] : null;
-                const gente = deptoInc ? genteCerca(deptoInc, inc.areaHa) : null;
-                return (
-                  <ul className="inc-datos">
-                    <li>
-                      <span aria-hidden="true">📍</span>
-                      <span>
-                        {d ? (
-                          <>
-                            Departamento <b>{deptoInc}</b>, Salta (cerca de {d.cabecera})
-                          </>
-                        ) : (
-                          "Provincia de Salta"
-                        )}
-                      </span>
-                    </li>
-                    <li>
-                      <span aria-hidden="true">🔥</span>
-                      <span>
-                        Unas <b>{inc.areaHa} ha</b> con fuego: como <b>{canchas(inc.areaHa).toLocaleString("es-AR")} canchas de fútbol</b>
-                      </span>
-                    </li>
-                    {gente !== null && (
-                      <li>
-                        <span aria-hidden="true">🏠</span>
-                        <span>
-                          Se estima que unas <b>{gente.toLocaleString("es-AR")} personas</b> viven a menos de {RADIO_KM} km (Censo 2022)
-                        </span>
-                      </li>
-                    )}
-                    {amb && (
-                      <li>
-                        <span aria-hidden="true">🌳</span>
-                        <span>
-                          <b>{amb.nombre}</b>: {amb.bosque}. El fuego pone en riesgo:
-                          <span className="fauna">
-                            <span><b>Flora:</b> {amb.flora}.</span>
-                            <span><b>Mamíferos:</b> {amb.mamiferos}.</span>
-                            <span><b>Aves:</b> {amb.aves}.</span>
-                            <a href={amb.url} target="_blank" rel="noreferrer" className="mini">Fuente: {amb.fuente} ↗</a>
-                          </span>
-                        </span>
-                      </li>
-                    )}
-                  </ul>
-                );
-              })()}
-              {(() => {
-                const cl = clima?.id === inc.id ? clima.c : null;
-                const k = calcular({ areaHa: inc.areaHa, nivel: inc.nivel, frpMax: inc.frpMax, depto: deptoInc, clima: cl, dolar: dolar?.venta ?? null, costoHa: costoHaUsd });
-                const c = cuartelCercano(inc.lat, inc.lon);
-                return (
-                  <>
-                    {zone ? (
-                      <div className="inc-monto">
-                        <span>Meta del fondo para Salta, la que paga el contrato</span>
-                        <b>{fmtUsdc(zone.target)} USDC</b>
-                        <small>
-                          {zone.hotspots} {zone.hotspots === 1 ? "foco confirmado" : "focos confirmados"} × 14 ha × {fmtUsdc(zone.costoHa)} USDC
-                          {avax && <> · ≈ {enAvax(Number(zone.target) / 1e6, avax)} AVAX</>}
-                          {dolar && <> · ≈ {pesos(zone.target, dolar)}</>}
-                        </small>
-                      </div>
-                    ) : (
-                      <p className="mini">Leyendo la meta del contrato…</p>
-                    )}
-                    <p className="mini">
-                      <b>Estimación ampliada (referencia)</b> para este incendio: unos {usd(k.total)} USDC
-                      {dolar && <> (≈ {pesosUsd(k.total, dolar)})</>}. El contrato paga con la regla simple, no con esta estimación.
-                    </p>
-                    {cl && cl.viento >= 5 && (
-                      <p className="viento">
-                        🧭 El viento lo empuja hacia <b>{rumbo(cl.vientoDesde + 180)}</b> a {Math.round(cl.viento)} km/h
-                      </p>
-                    )}
-                    <p className="cuartel">
-                      🚒 Cuartel más cercano: <b>{c.cuartel.nombre}</b> ({c.cuartel.localidad}), a unos {Math.round(c.km)} km. <small>(Referencia por distancia.)</small>
-                    </p>
-                    <details className="formula">
-                      <summary>Ver la cuenta</summary>
-                      <ul className="desglose">
-                        <li>
-                          <span>
-                            Apagar el fuego en el suelo
-                            <small>
-                              {inc.areaHa} ha × {usd(costoHaUsd)} USDC × intensidad {k.intensidad.f}
-                              {k.clima.f !== 1 && <> × clima {k.clima.f}</>}
-                              {k.ambiente && <> × ambiente {k.ambiente.f}</>}
-                            </small>
-                          </span>
-                          <Monto v={usd(k.combate)} />
-                        </li>
-                        {k.horas > 0 && (
-                          <li>
-                            <span>
-                              Avión hidrante
-                              <small>
-                                {k.horas} h × {usd(HORA_AVION)} USDC por hora
-                              </small>
-                            </span>
-                            <Monto v={usd(k.aereo)} />
-                          </li>
-                        )}
-                        {k.viviendas > 0 && dolar && (
-                          <li>
-                            <span>
-                              Ayuda a los vecinos
-                              <small>
-                                {k.viviendas.toLocaleString("es-AR")} {k.viviendas === 1 ? "casa" : "casas"} a menos de {RADIO_AFECTADOS_KM} km × $
-                                {AYUDA_VIVIENDA_ARS.toLocaleString("es-AR")}
-                              </small>
-                            </span>
-                            <Monto v={usd(k.asistencia)} />
-                          </li>
-                        )}
-                      </ul>
-                      <ul className="factores">
-                        <li>
-                          🔥 Fuerza del fuego: <b>{k.intensidad.clase}</b>
-                          {inc.frpMax != null && <> (el satélite midió {inc.frpMax.toLocaleString("es-AR")} MW de potencia)</>}
-                        </li>
-                        {cl ? (
-                          <li>
-                            🌡️ Ahora: {Math.round(cl.temp)} °C, humedad {Math.round(cl.humedad)} %, viento {Math.round(cl.viento)} km/h
-                            {k.clima.detalle.length > 0 ? <> · suma riesgo: {k.clima.detalle.join(", ")}</> : " · sin agravantes"}
-                          </li>
-                        ) : (
-                          <li>🌡️ Clima: sin dato ahora (se toma como normal)</li>
-                        )}
-                        {k.ambiente && <li>🌳 Ambiente: {k.ambiente.nombre} (factor {k.ambiente.f})</li>}
-                      </ul>
-                      <p className="mini">
-                        Es una estimación ampliada, solo de referencia. El contrato paga con la regla simple de la zona (focos × 14 ha ×{" "}
-                        {usd(costoHaUsd)} USDC).
-                        El cuartel es una referencia por distancia: quién va lo coordina Defensa Civil. Última detección:{" "}
-                        {horaAr(inc.ultimaDeteccion)} (hora argentina) ({inc.sensores.map((s) => SENSOR_NAME[s]).join(", ")}).{" "}
-                        <Link href="/fundamentos#formula">De dónde sale cada número</Link>
-                      </p>
-                    </details>
-                  </>
-                );
-              })()}
-              <p className="mini">
-                Tu donación va al fondo de toda la provincia, no a este incendio en particular: se envía cuando dos satélites
-                confirman fuego en Salta.
-              </p>
-              <a className="btn" href="#donar">
-                Ayudar a combatirlo
-              </a>
-            </div>
-          )}
-
-          {f && (
-            <div className="card foco">
-              <button className="cerrar" onClick={() => setSel(null)} aria-label="Cerrar el foco">
-                ✕
-              </button>
-              <h2>Punto de calor</h2>
-              <p>
-                <i className="dot" style={{ background: SENSOR_COLOR[f.sensor] }} /> Lo vio {SENSOR_NAME[f.sensor]}
-              </p>
-              <p>
-                {horaAr(`${f.fecha}T${f.hora.slice(0, 2)}:${f.hora.slice(2)}:00Z`)} (hora argentina) · confianza del satélite: {CONF_NAME[f.confianza]}
-              </p>
-            </div>
-          )}
-
-          <div className="card donar" id="donar">
-            <h2>Doná a bomberos y damnificados</h2>
-            <Foto
-              src="/fotos/brigadistas-comarca-andina.webp"
-              alt="Dos brigadistas apagan con una manguera un incendio forestal de noche"
-              ancho={1200}
-              alto={800}
-              pie="Brigadistas en la Comarca Andina, enero de 2026."
-              autor="CatrielGB"
-              licencia="CC BY-SA 4.0"
-              licenciaUrl="https://creativecommons.org/licenses/by-sa/4.0/deed.es"
-              fuente="https://commons.wikimedia.org/wiki/File:Brigadistas_1.jpg"
-            />
-            <ol className="stepper" aria-label="Pasos para donar">
-              <li className={pasoWallet ? "hecho" : "ahora"} aria-current={!pasoWallet ? "step" : undefined}>
-                <i>{pasoWallet ? "✔" : "1"}</i>
-                <span>Abrí tu billetera</span>
-              </li>
-              <li className={pasoRed ? "hecho" : pasoWallet ? "ahora" : ""} aria-current={pasoWallet && !pasoRed ? "step" : undefined}>
-                <i>{pasoRed ? "✔" : "2"}</i>
-                <span>Elegí Avalanche</span>
-              </li>
-              <li className={pasoListo ? "hecho" : pasoRed ? "ahora" : ""} aria-current={pasoRed && !pasoListo ? "step" : undefined}>
-                <i>{pasoListo ? "✔" : "3"}</i>
-                <span>Doná</span>
-              </li>
-            </ol>
-
-            <p className="lbl" id="lbl-monto">¿Cuánto querés donar?</p>
-            <div className="chips" role="group" aria-labelledby="lbl-monto">
-              {["10", "25", "50", "100"].map((v) => (
-                <button key={v} className={amount === v ? "on" : ""} aria-pressed={amount === v} aria-label={`${v} USDC`} onClick={() => setAmount(v)} disabled={busy}>
-                  {v}
-                </button>
-              ))}
-            </div>
-            <label htmlFor="monto" className="sr">
-              Otro monto en USDC
-            </label>
-            <div className="monto-otro">
-              <input id="monto" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} disabled={busy} />
-              <span>USDC</span>
-            </div>
-            <p className="mini">
-              1 USDC = 1 dólar digital.{avax && <> Hoy 1 AVAX ≈ {avax.toLocaleString("es-AR")} USDC.</>}
-              {minDon !== null && <> Mínimo: {fmtUsdc(minDon)} USDC que lleguen al fondo.</>}
-            </p>
-            {bajoMinDon && minDon !== null && (
-              <p className="aviso-minimo" role="alert">
-                Con este monto llegan menos de {fmtUsdc(minDon)} USDC al fondo. Subí un poco el monto.
-              </p>
-            )}
-
-            {m2 !== null && m2 > 0 && (
-              <p className="impacto" aria-live="polite">
-                🌱 Con la regla del fondo, tu aporte cubre unos <b>{m2.toLocaleString("es-AR")} m²</b> de fuego
-                {m2 >= 7140 ? <> (≈ {(m2 / 7140).toLocaleString("es-AR", { maximumFractionDigits: 1 })} canchas de fútbol)</> : <> (≈ {Math.max(1, Math.round((m2 / 7140) * 100))} % de una cancha de fútbol)</>}
-              </p>
-            )}
-
-            <p className="cuenta" aria-live="polite">
-              {reparto ? (
-                <>
-                  Pagás <b>{fmtUsdc(reparto.total)}</b> → llegan <b>{fmtUsdc(reparto.net)}</b> al fondo para bomberos y damnificados
-                  <small> ({fmtUsdc(reparto.fee)} quedan para brasa, por la plataforma y la difusión; se ve en el registro público)</small>
-                </>
-              ) : (
-                "Elegí un monto para ver cuánto llega."
-              )}
-            </p>
-            <label className="check">
-              <input type="checkbox" checked={cubrir} onChange={(e) => setCubrir(e.target.checked)} disabled={busy} /> Sumo la comisión
-              para que llegue el monto completo
-            </label>
-            <p className="mini">
-              Una donación enviada no se puede deshacer.{" "}
-              <a href="#terminos">Leé las condiciones</a>.
-            </p>
-            {saldo !== null && (
-              <p className="mini">
-                Tenés {fmtUsdc(saldo)} USDC{sinSaldo ? " · no alcanza" : ""}
-              </p>
-            )}
-
-            {!hasWallet ? (
-              <>
-                <a className="btn" href="https://core.app/" target="_blank" rel="noreferrer">
-                  Instalar Core, la billetera de Avalanche
-                </a>
-                <a className="btn btn-sec" href="https://metamask.io/download/" target="_blank" rel="noreferrer">
-                  Instalar MetaMask
-                </a>
-              </>
-            ) : !account ? (
-              <>
-                {wallets.map((b, i) => (
-                  <button key={b.id} className={i === 0 ? "btn" : "btn btn-sec"} onClick={() => connect(b.id)}>
-                    Abrir {b.nombre}
-                  </button>
-                ))}
-              </>
-            ) : !netOk ? (
-              <div className="aviso-red" role="alert">
-                <p>
-                  <b>Tu billetera está en otra red.</b> Para donar tiene que estar en {redName || "Avalanche Fuji"}.
+        {/* 3 · Mapa en vivo */}
+        <section id="mapa" className="border-0 border-y border-solid border-linea bg-white" aria-labelledby="mapa-tit">
+          <div className={seccion}>
+            <Revelar className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className={eyebrow}>
+                  {enVivo && !detViejo && <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-verde align-middle" aria-hidden="true" />}
+                  Salta · {!enVivo ? "datos guardados" : detViejo ? `último dato del ${detViejo}` : "hoy"}
                 </p>
-                <button className="btn" onClick={cambiar}>
-                  Cambiar a {redName || "Avalanche Fuji"}
-                </button>
+                <h2 id="mapa-tit" className={titulo}>
+                  {!focos
+                    ? "Mirando el cielo de Salta…"
+                    : nInc === 0
+                      ? "Hoy los satélites no ven incendios en Salta"
+                      : `Los satélites ${detViejo ? "vieron" : "ven"} ${nInc} ${nInc === 1 ? "incendio" : "incendios"} en Salta`}
+                </h2>
               </div>
-            ) : (
-              <button className="btn" onClick={onDonar} disabled={busy || !netOk || reparto === null || sinSaldo || bajoMinDon}>
-                {busy ? "Esperando tu firma…" : `Donar ${reparto ? fmtUsdc(reparto.total) : ""} USDC`}
-              </button>
-            )}
-
-            <p className="estado" role="status" aria-live="polite">
-              {!hasWallet && "Para donar necesitás una billetera digital como Core o MetaMask."}
-              {hasWallet && !account && (wallets.length > 1 ? "Elegí con qué billetera donar." : "Tu billetera está cerrada.")}
-              {account && netOk && tx.s === "idle" && `Billetera lista (${short(account)}).`}
-            </p>
-            {tx.s === "pendiente" && (
-              <p className="pend">
-                {tx.paso === "approve" ? "1 de 2 · Autorizá el USDC en tu billetera…" : "2 de 2 · Enviando tu donación…"}{" "}
-                {tx.hash && dep && <Hash d={dep} h={tx.hash} />}
-              </p>
-            )}
-            {tx.s === "ok" && dep && (
-              <div className="ok gracias">
-                <div className="chispas" aria-hidden="true">
-                  {Array.from({ length: 14 }, (_, i) => (
-                    <i key={i} style={{ left: `${(i * 7 + 3) % 100}%`, animationDelay: `${(i % 7) * 0.12}s` }} />
+              {focosEj && focosVivo && !focosVivo.datosGuardados && (
+                <div className="inline-flex rounded-full border border-solid border-linea bg-papel p-1" role="group" aria-label="Qué datos ver">
+                  {(["vivo", "ejemplo"] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={ver === v}
+                      onClick={() => cambiarVista(v)}
+                      className={`min-h-10 cursor-pointer rounded-full border-0 px-4 text-sm font-semibold transition ${ver === v ? "bg-tinta text-white" : "bg-transparent text-tinta-2 hover:text-tinta"}`}
+                    >
+                      {v === "vivo" ? (vivoViejo ? `Último dato (${vivoViejo})` : "Hoy, en vivo") : "Ver un ejemplo"}
+                    </button>
                   ))}
                 </div>
-                <p className="insignia">🏅 ¡Gracias! Ya sos parte de la brigada de brasa.</p>
-                <p>
-                  Tu donación quedó registrada. <Hash d={dep} h={tx.hash} />
-                </p>
-                <a className="btn btn-sec" href={`https://wa.me/?text=${encodeURIComponent(compartir)}`} target="_blank" rel="noreferrer">
-                  Contalo por WhatsApp
-                </a>
+              )}
+            </Revelar>
+
+            {ver === "ejemplo" && focosEj && (
+              <p className="m-0 mt-4 rounded-2xl bg-aviso/10 px-4 py-3 text-[15px] text-tinta">
+                Estás viendo un ejemplo con datos reales de la NASA del 10 y 11/11. Solo se envían fondos con los datos de hoy.
+              </p>
+            )}
+
+            <div className="mt-8 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+              <div>
+                <div className="overflow-hidden rounded-3xl border border-solid border-linea">
+                  <Mapa
+                    focos={focos}
+                    seleccionado={selInc}
+                    onFoco={(i) => {
+                      setSel(i);
+                      setSelInc(null);
+                    }}
+                    onIncendio={(i) => {
+                      setSelInc(i);
+                      setSel(null);
+                    }}
+                    onZona={() => {
+                      setSel(null);
+                      setSelInc(null);
+                    }}
+                    avisos={ver === "vivo" ? goes?.avisos : undefined}
+                  />
+                </div>
+                <ul className="m-0 mt-3 flex list-none flex-wrap gap-x-5 gap-y-1 p-0 text-sm text-tinta-2">
+                  {([1, 2, 3] as const).map((n) => (
+                    <li key={n} className="inline-flex items-center gap-1.5">
+                      <Gravedad nivel={n} px={15} /> {NIVEL_TEXTO[n]}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )}
-            {tx.s === "error" && <p className="error">{tx.msg}</p>}
 
-            <details className="avax-pasos">
-              <summary>¿No tenés billetera o tenés AVAX? Mirá cómo</summary>
-              <ol>
-                <li>
-                  <b>Bajá Core</b>, la billetera de Avalanche.{" "}
-                  <a href="https://core.app/" target="_blank" rel="noreferrer">
-                    core.app ↗
-                  </a>
-                </li>
-                <li>
-                  <b>Si tenés AVAX, cambialo a USDC</b> con el botón “Swap” de Core o en{" "}
-                  <a href="https://lfj.gg/avalanche/trade" target="_blank" rel="noreferrer">
-                    LFJ ↗
-                  </a>
-                  . Al fondo siempre llega USDC, así cuarteles y damnificados saben exacto cuánto reciben. Tu AVAX nunca pasa por brasa.
-                </li>
-                <li>
-                  <b>Volvé acá y doná.</b>
-                </li>
-              </ol>
-              <p className="mini">
-                En Avalanche Fuji el USDC se pide gratis en{" "}
-                <a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">
-                  faucet.circle.com ↗
-                </a>{" "}
-                (elegí Avalanche Fuji).
-              </p>
-            </details>
-          </div>
-
-          <div className="card">
-            <h2>Quiénes reciben</h2>
-            {zone && zone.recipients.length === 0 && <p className="mini">Todavía no hay cuarteles cargados.</p>}
-            {v3 && zone && !asignacionVigente && (
-              <p className="aviso-minimo" role="note">
-                El fondo paga cuando la federación asigna los cuarteles que combaten el fuego.
-              </p>
-            )}
-            <ul className="quienes">
-              {zone?.recipients.map((r) => (
-                <li key={r.id}>
-                  <span>
-                    <span aria-hidden="true">{r.kind === "station" ? "🚒" : "🤝"}</span> <b>{nombreDestinatario(r.label, r.kind)}</b>{" "}
-                    <small>
-                      {r.kind === "station" ? "combate y logística" : "ayuda a damnificados"}
-                      {r.active ? "" : " (inactivo)"}
-                    </small>
-                    {asignados.has(r.id.toLowerCase()) && zone && (
-                      <small className="asignado">
-                        {" "}
-                        · Asignado a este incendio por la federación, hasta el{" "}
-                        {new Date(zone.respondersUntil * 1000).toLocaleString("es-AR", {
-                          day: "numeric",
-                          month: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          timeZone: "America/Argentina/Salta",
-                        })}
-                      </small>
+              <div className="grid content-start gap-4">
+                {inc ? (
+                  <div className={`${tarjeta} relative p-6`}>
+                    <button
+                      type="button"
+                      onClick={() => setSelInc(null)}
+                      aria-label="Cerrar el incendio"
+                      className="absolute right-4 top-4 grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-papel-2 text-tinta-2 hover:text-tinta"
+                    >
+                      ✕
+                    </button>
+                    <p className="m-0 flex flex-wrap items-center gap-2 text-sm font-semibold">
+                      <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-tinta" style={{ background: `${NIVEL_COLOR[inc.nivel]}33` }}>
+                        <Gravedad nivel={inc.nivel} px={16} /> Nivel {inc.nivel} · {NIVEL_NOMBRE[inc.nivel]}
+                      </span>
+                      <span className={`rounded-full px-3 py-1 ${inc.confirmado ? "bg-verde-suave text-verde" : "bg-papel-2 text-tinta-2"}`}>
+                        {inc.confirmado ? "✔ Dos satélites" : "Un solo satélite"}
+                      </span>
+                    </p>
+                    <h3 className="m-0 mt-4 pr-8 font-display text-2xl font-bold tracking-tight text-tinta">
+                      Incendio {inc.id}
+                      {deptoInc && <> en {deptoInc}</>}
+                    </h3>
+                    <p className="m-0 mt-2 text-[17px] leading-relaxed text-tinta-2">
+                      Unas <b className="text-tinta">{inc.areaHa} ha</b> con fuego, como {canchas(inc.areaHa).toLocaleString("es-AR")} canchas de fútbol.
+                    </p>
+                    {(() => {
+                      const cl = clima?.id === inc.id ? clima.c : null;
+                      const c = cuartelCercano(inc.lat, inc.lon);
+                      return (
+                        <ul className="m-0 mt-4 grid list-none gap-2 p-0 text-[15px] text-tinta-2">
+                          {cl && cl.viento >= 5 && (
+                            <li>
+                              Viento hacia el <b className="text-tinta">{rumbo(cl.vientoDesde + 180)}</b>, a {Math.round(cl.viento)} km/h
+                            </li>
+                          )}
+                          <li>
+                            Cuartel más cercano: <b className="text-tinta">{c.cuartel.nombre}</b>, a unos {Math.round(c.km)} km
+                          </li>
+                        </ul>
+                      );
+                    })()}
+                    {zone && (
+                      <div className="mt-5 rounded-2xl bg-papel p-4">
+                        <p className="m-0 text-sm text-tinta-2">Meta del fondo para Salta</p>
+                        <p className="m-0 font-display text-3xl font-bold tracking-tight text-tinta">{fmtUsdc(zone.target)} USDC</p>
+                        {dolar && <p className="m-0 text-sm text-tinta-2">≈ {pesos(zone.target, dolar)}</p>}
+                      </div>
                     )}
-                    {r.active && r.activeFrom * 1000 > Date.now() && (
-                      <small className="pendiente">
-                        {" "}
-                        · recibe desde el{" "}
-                        {new Date(r.activeFrom * 1000).toLocaleString("es-AR", {
-                          day: "numeric",
-                          month: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          timeZone: "America/Argentina/Salta",
-                        })}
-                      </small>
-                    )}
-                  </span>
-                  {dep && addrUrl(dep, r.wallet) ? (
-                    <a href={addrUrl(dep, r.wallet)} target="_blank" rel="noreferrer">
-                      ver cuenta ↗
+                    <a className={`${btnPrimario} mt-5 w-full`} href="#donar">
+                      Ayudar a combatirlo
                     </a>
-                  ) : (
-                    <code>{short(r.wallet)}</code>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <p className="mini">
-              Solo reciben cuarteles y damnificados verificados. Cada alta nueva se ve en público antes de poder cobrar
-              {dep && esV2(dep) && dep.recipientDelay ? ` (${Math.round(dep.recipientDelay / 60)} min hoy; 72 h con la federación)` : ""}.
-            </p>
-          </div>
-
-          {zone && zone.eventos.length > 0 && (
-            <div className="card">
-              <h2>
-                Últimos movimientos {donaciones > 0 && <span className="pill">{donaciones} {donaciones === 1 ? "donación" : "donaciones"}</span>}
-              </h2>
-              <ul className="eventos">
-                {zone.eventos.map((e) => (
-                  <li key={e.tx + e.texto}>
-                    <span aria-hidden="true">{e.tipo === "Donated" ? "💛" : e.tipo === "Released" ? "🚒" : "🔥"}</span> {e.texto}
-                    {dep && txUrl(dep, e.tx) && (
+                  </div>
+                ) : (
+                  <div className={`${tarjeta} p-6`}>
+                    <p className="m-0 text-sm font-semibold text-tinta-2">El fondo de Salta</p>
+                    {zoneErr && <p className="error">{zoneErr}</p>}
+                    {!zone && !zoneErr && <p className="m-0 mt-2 text-tinta-2">Leyendo el fondo…</p>}
+                    {zone && (
                       <>
-                        {" "}
-                        <a href={txUrl(dep, e.tx)} target="_blank" rel="noreferrer">
-                          ver ↗
-                        </a>
+                        <p className="m-0 mt-1 font-display text-5xl font-bold tracking-tight text-tinta">
+                          <Cuenta n={Number(zone.balance) / 1e6} /> <span className="text-2xl text-tinta-2">USDC</span>
+                        </p>
+                        <p className="m-0 mt-1 text-[15px] text-tinta-2">
+                          {zone.target > 0n ? `recaudados de una meta de ${fmtUsdc(zone.target)}` : "listos para el próximo incendio confirmado"}
+                        </p>
+                        {zone.target > 0n && (
+                          <div
+                            className="mt-4 h-2.5 overflow-hidden rounded-full bg-papel-2"
+                            role="progressbar"
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={Math.round(pct)}
+                            aria-label="Recaudado para la meta"
+                          >
+                            <i className="block h-full rounded-full bg-verde transition-[width] duration-700" style={{ width: `${Math.max(Math.min(pct, 100), zone.balance > 0n ? 2 : 0)}%` }} />
+                          </div>
+                        )}
+                        <dl className="m-0 mt-6 grid grid-cols-2 gap-4">
+                          <div>
+                            <dd className="m-0 font-display text-2xl font-bold text-tinta"><Cuenta n={nConf} /></dd>
+                            <dt className="text-sm text-tinta-2">{nConf === 1 ? "incendio confirmado" : "incendios confirmados"}</dt>
+                          </div>
+                          <div>
+                            <dd className="m-0 font-display text-2xl font-bold text-tinta"><Cuenta n={liberado} /></dd>
+                            <dt className="text-sm text-tinta-2">USDC ya enviados</dt>
+                          </div>
+                        </dl>
                       </>
                     )}
+                    <p className="m-0 mt-6 text-[15px] text-tinta-2">Tocá una llama del mapa para ver cuánto hace falta.</p>
+                  </div>
+                )}
+                {f && (
+                  <div className={`${tarjeta} relative p-5 text-[15px] text-tinta-2`}>
+                    <button
+                      type="button"
+                      onClick={() => setSel(null)}
+                      aria-label="Cerrar el foco"
+                      className="absolute right-3 top-3 grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-papel-2 text-tinta-2"
+                    >
+                      ✕
+                    </button>
+                    <b className="text-tinta">Punto de calor</b> · lo vio {SENSOR_NAME[f.sensor]}
+                    <br />
+                    {horaAr(`${f.fecha}T${f.hora.slice(0, 2)}:${f.hora.slice(2)}:00Z`)} · confianza {CONF_NAME[f.confianza]}
+                  </div>
+                )}
+                {ver === "vivo" && goes && goes.avisos.length > 0 && (
+                  <p className="m-0 rounded-2xl bg-aviso/10 px-4 py-3 text-[15px] text-tinta" role="status">
+                    <b>Aviso rápido:</b> {goes.avisos.length} {goes.avisos.length === 1 ? "posible fuego nuevo" : "posibles fuegos nuevos"} en la última hora, todavía sin confirmar.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4 · Donar */}
+        <section className={seccion} aria-labelledby="donar-tit">
+          <div className="grid items-start gap-10 lg:grid-cols-[1fr_minmax(0,460px)]">
+            <Revelar>
+              <p className={eyebrow}>Doná</p>
+              <h2 id="donar-tit" className={titulo}>
+                Tu donación llega. <span className="text-accion">Podés comprobarlo.</span>
+              </h2>
+              <p className={bajada}>
+                El dinero va de tu billetera al fondo y del fondo a quien combate el fuego. Nadie lo toca en el camino.
+              </p>
+              <ul className="m-0 mt-8 grid list-none gap-4 p-0 text-[17px] text-tinta">
+                {[
+                  [<IcoVerificado key="a" size={20} />, stellar ? "Una sola firma desde tu billetera de Stellar." : "Dos firmas desde tu billetera."],
+                  [<IcoOjo key="b" size={20} />, `La comisión de ${dep ? (dep.feeBps ?? 500) / 100 : 5} % se ve antes de confirmar.`],
+                  [<IcoCandado key="c" size={20} />, "El fondo no tiene función de retiro: solo paga a cuarteles y damnificados verificados."],
+                ].map(([ico, txt], i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="mt-0.5 grid size-9 flex-none place-items-center rounded-full bg-verde-suave text-verde">{ico}</span>
+                    <span className="leading-snug">{txt}</span>
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
-          {ultimaLib && dep && !deContrato && (
-            <p className="mini">
-              Ya se enviaron {liberado.toLocaleString("es-AR", { maximumFractionDigits: 2 })} USDC con la versión anterior del contrato.{" "}
-              <a href={txUrl(dep, ultimaLib.tx)} target="_blank" rel="noreferrer">
-                Ver el envío ↗
-              </a>
-            </p>
-          )}
+              <div className="foto-clara mt-10 overflow-hidden rounded-3xl">
+                <Foto
+                  src="/fotos/brigadistas-comarca-andina.webp"
+                  chica="/fotos/brigadistas-comarca-andina-640.webp"
+                  alt="Dos brigadistas apagan con una manguera un incendio forestal de noche"
+                  ancho={1200}
+                  alto={800}
+                  pie="Brigadistas en la Comarca Andina, enero de 2026."
+                  autor="CatrielGB"
+                  licencia="CC BY-SA 4.0"
+                  licenciaUrl="https://creativecommons.org/licenses/by-sa/4.0/deed.es"
+                  fuente="https://commons.wikimedia.org/wiki/File:Brigadistas_1.jpg"
+                />
+              </div>
+            </Revelar>
+
+            <Revelar demora={0.1} className={`${tarjeta} p-6 md:p-8 lg:sticky lg:top-24`}>
+              <div id="donar" className="scroll-mt-24">
+                <p className="m-0 font-display text-xl font-bold text-tinta" id="lbl-monto">¿Cuánto querés donar?</p>
+                <div className="mt-4 grid grid-cols-4 gap-2" role="group" aria-labelledby="lbl-monto">
+                  {["10", "25", "50", "100"].map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={amount === v}
+                      aria-label={`${v} USDC`}
+                      onClick={() => setAmount(v)}
+                      disabled={busy}
+                      className={`min-h-12 cursor-pointer rounded-2xl border border-solid font-display text-lg font-bold transition ${amount === v ? "border-tinta bg-tinta text-white" : "border-linea bg-white text-tinta hover:border-tinta/40"}`}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+                <label htmlFor="monto" className="sr">
+                  Otro monto en USDC
+                </label>
+                <div className="mt-3 flex items-center gap-3 rounded-2xl border border-solid border-linea bg-papel px-4 focus-within:border-tinta">
+                  <input
+                    id="monto"
+                    inputMode="decimal"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    disabled={busy}
+                    className="min-h-14 w-full flex-1 rounded-none border-0 bg-transparent p-0 font-display text-2xl font-bold text-tinta outline-none"
+                  />
+                  <span className="font-semibold text-tinta-2">USDC</span>
+                </div>
+                <p className="m-0 mt-2 text-sm text-tinta-2">
+                  1 USDC = 1 dólar digital.{minDon !== null && <> Mínimo: {fmtUsdc(minDon)} USDC.</>}
+                </p>
+                {bajoMinDon && minDon !== null && (
+                  <p className="m-0 mt-2 rounded-xl bg-aviso/10 px-3 py-2 text-sm text-tinta" role="alert">
+                    Con este monto llegan menos de {fmtUsdc(minDon)} USDC al fondo. Subí un poco el monto.
+                  </p>
+                )}
+
+                <div className="mt-5 rounded-2xl bg-papel p-4 text-[15px] text-tinta-2" aria-live="polite">
+                  {reparto ? (
+                    <dl className="m-0 grid gap-1.5">
+                      <div className="flex justify-between"><dt>Pagás</dt><dd className="m-0 font-semibold text-tinta">{fmtUsdc(reparto.total)} USDC</dd></div>
+                      <div className="flex justify-between"><dt>Comisión de la plataforma</dt><dd className="m-0">{fmtUsdc(reparto.fee)} USDC</dd></div>
+                      <div className="mt-1 flex justify-between border-0 border-t border-solid border-linea pt-2 text-base">
+                        <dt className="font-semibold text-tinta">Llega al fondo</dt>
+                        <dd className="m-0 font-display text-lg font-bold text-verde">{fmtUsdc(reparto.net)} USDC</dd>
+                      </div>
+                    </dl>
+                  ) : (
+                    "Elegí un monto para ver cuánto llega."
+                  )}
+                </div>
+                <label className="mt-3 flex cursor-pointer items-start gap-2 text-[15px] font-normal text-tinta-2">
+                  <input type="checkbox" checked={cubrir} onChange={(e) => setCubrir(e.target.checked)} disabled={busy} className="mt-1 size-4 w-4 flex-none accent-[#1f7a54]" />
+                  Sumo la comisión para que llegue el monto completo
+                </label>
+                {saldo !== null && (
+                  <p className="m-0 mt-2 text-sm text-tinta-2">
+                    Tenés {fmtUsdc(saldo)} USDC{sinSaldo ? " · no alcanza" : ""}
+                  </p>
+                )}
+
+                <div className="mt-5 grid gap-2">
+                  {!hasWallet && !stellar ? (
+                    <a className={`${btnPrimario} w-full`} href="https://metamask.io/download/" target="_blank" rel="noreferrer">
+                      Instalar una billetera
+                    </a>
+                  ) : !account ? (
+                    wallets.map((b, i) => (
+                      <button key={b.id} type="button" className={`${i === 0 ? btnPrimario : btnSecundario} w-full`} onClick={() => connect(b.id)}>
+                        Abrir {b.nombre}
+                      </button>
+                    ))
+                  ) : !netOk ? (
+                    <div role="alert" className="rounded-2xl bg-aviso/10 p-4 text-[15px] text-tinta">
+                      <p className="m-0">
+                        <b>Tu billetera está en otra red.</b> Para donar tiene que estar en {redName}.
+                      </p>
+                      <button type="button" className={`${btnPrimario} mt-3 w-full`} onClick={cambiar}>
+                        Cambiar de red
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" className={`${btnPrimario} w-full`} onClick={onDonar} disabled={busy || !netOk || reparto === null || sinSaldo || bajoMinDon}>
+                      {busy ? "Esperando tu firma…" : `Donar ${reparto ? fmtUsdc(reparto.total) : ""} USDC`}
+                    </button>
+                  )}
+                </div>
+
+                <p className="m-0 mt-3 text-sm text-tinta-2" role="status" aria-live="polite">
+                  {account && netOk && tx.s === "idle" && `Billetera lista (${short(account)}).`}
+                </p>
+                {tx.s === "pendiente" && (
+                  <p className="m-0 mt-2 rounded-xl bg-aviso/10 px-3 py-2 text-[15px] text-tinta">
+                    {stellar ? (tx.hash ? "Enviando tu donación…" : "Firmá la donación en tu billetera…") : tx.paso === "approve" ? "1 de 2 · Autorizá el USDC en tu billetera…" : "2 de 2 · Enviando tu donación…"}{" "}
+                    {tx.hash && dep && <Hash d={dep} h={tx.hash} />}
+                  </p>
+                )}
+                {tx.s === "ok" && dep && (
+                  <div className="mt-3 rounded-2xl bg-verde-suave p-4 text-[15px] text-tinta">
+                    <p className="m-0 font-display text-lg font-bold text-verde">¡Gracias! Tu donación ya está en el fondo.</p>
+                    <p className="m-0 mt-1">
+                      Quedó registrada. <Hash d={dep} h={tx.hash} />
+                    </p>
+                    <a className={`${btnSecundario} mt-3 w-full`} href={`https://wa.me/?text=${encodeURIComponent(compartir)}`} target="_blank" rel="noreferrer">
+                      Contalo por WhatsApp
+                    </a>
+                  </div>
+                )}
+                {tx.s === "error" && <p className="m-0 mt-2 rounded-xl bg-red-50 px-3 py-2 text-[15px] font-semibold text-red-800">{tx.msg}</p>}
+
+                <details className="mt-5 text-[15px] text-tinta-2">
+                  <summary className="cursor-pointer font-semibold text-tinta">¿Primera vez? Mirá cómo</summary>
+                  {stellar ? (
+                    <ol className="m-0 mt-2 grid gap-1.5 pl-5">
+                      <li>Instalá una billetera de Stellar, por ejemplo Varial, xBull o Lobstr.</li>
+                      <li>Habilitá USDC en tu cuenta.</li>
+                      <li>Volvé acá y doná. Es una sola firma.</li>
+                    </ol>
+                  ) : (
+                    <ol className="m-0 mt-2 grid gap-1.5 pl-5">
+                      <li>Instalá una billetera digital.</li>
+                      <li>Cargá USDC en tu cuenta.</li>
+                      <li>Volvé acá y doná.</li>
+                    </ol>
+                  )}
+                </details>
+                <details className="mt-3 text-[15px] text-tinta-2" id="terminos">
+                  <summary className="cursor-pointer font-semibold text-tinta">Antes de donar, leé esto</summary>
+                  <ul className="m-0 mt-2 grid gap-1.5 pl-5">
+                    <li>Hoy funciona en {redName || "una red de prueba"}: el USDC es de prueba y no tiene valor.</li>
+                    <li>El dinero no pasa por brasa: el fondo paga solo, según la regla pública, a destinatarios verificados.</li>
+                    <li>La detección es una estimación de satélite, con unas 3 horas de demora. No es un parte oficial ni un seguro.</li>
+                    <li>Donás solo si sos mayor de edad. Una donación enviada no se puede deshacer.</li>
+                  </ul>
+                </details>
+              </div>
+            </Revelar>
+          </div>
         </section>
-      </div>
 
-      <details className="terminos" id="terminos" open>
-        <summary>Antes de donar, leé esto</summary>
-        <ul>
-          <li>
-            <b>Red:</b> hoy funciona en Avalanche Fuji, la red de prueba de Avalanche. El paso a la red principal está en el roadmap.
-          </li>
-          <li>
-            <b>Comisión:</b> {dep ? `${(dep.feeBps ?? 500) / 100} %` : "5 %"} por la plataforma y la difusión, el máximo que permite el
-            fondo. No depende de cómo se use el dinero.
-          </li>
-          <li>
-            <b>El dinero no pasa por brasa:</b> el fondo paga solo, según la regla pública, a destinatarios
-            verificados (hoy por el equipo; en el piloto, por la federación de bomberos). La plataforma no es mandataria ni depositaria. Cada
-            cuartel o damnificado decide cómo usa lo que recibe.
-          </li>
-          <li>
-            <b>La detección es una estimación</b> de satélite, con unas 3 horas de demora. No es un parte oficial ni un seguro.
-          </li>
-          <li>
-            <b>Donás solo si sos mayor de edad</b> y entendés que una donación enviada no se puede deshacer.
-          </li>
-        </ul>
-      </details>
-
-      <section className="cuarteles" aria-label="Para cuarteles">
-        <h2>¿Sos bombero o damnificado?</h2>
-        <p>
-          La federación de bomberos verifica a cada cuartel y a cada familia damnificada. Cuando dos satélites confirman fuego en
-          su zona, reciben el dinero en su billetera. Cada pago queda anotado para rendir cuentas.
-        </p>
-      </section>
-
-      <BotonFlotante />
-
-    </main>
-      <footer className="pie">
-        <div className="pie-in">
-          <div className="pie-marca">
-            <Logo height={34} />
-            <p className="lema">Ayuda a tiempo, recursos a la vista.</p>
-            <p>
-              La ayuda llega más rápido que una colecta. El satélite avisa en minutos, la NASA confirma en horas y, con las dos
-              firmas, el contrato envía el dinero en segundos.
-            </p>
+        {/* 5 · Confianza */}
+        <section className="bg-tinta text-white" aria-labelledby="conf-tit">
+          <div className={seccion}>
+            <Revelar>
+              <p className={`${eyebrow} !text-celeste`}>Por qué confiar</p>
+              <h2 id="conf-tit" className={`${titulo} !text-white`}>Reglas públicas, escritas en un contrato que cualquiera puede leer.</h2>
+            </Revelar>
+            <ul className="m-0 mt-12 grid list-none grid-cols-2 gap-x-6 gap-y-10 p-0 md:grid-cols-4">
+              {CIFRAS.map((c, i) => (
+                <Revelar key={c.t} como="li" demora={i * 0.06}>
+                  <b className="block font-display text-6xl font-bold leading-none tracking-tight text-celeste md:text-7xl">{c.n}</b>
+                  <span className="mt-3 block max-w-[16ch] text-[17px] leading-snug text-white/75">{c.t}</span>
+                </Revelar>
+              ))}
+            </ul>
+            <ul className="m-0 mt-12 grid list-none gap-4 p-0 md:grid-cols-3">
+              {DUDAS.map((d, i) => (
+                <Revelar key={d.p} como="li" demora={i * 0.06} className="rounded-3xl border border-solid border-white/12 bg-white/5 p-6">
+                  <h3 className="m-0 font-display text-xl font-semibold text-white">{d.p}</h3>
+                  <p className="m-0 mt-2 text-[16px] leading-relaxed text-white/75">{d.r}</p>
+                </Revelar>
+              ))}
+            </ul>
+            <Revelar className="mt-12 flex flex-wrap gap-3">
+              {dep && addrUrl(dep, dep.fund) && (
+                <a className={btnPrimario} href={addrUrl(dep, dep.fund)} target="_blank" rel="noreferrer">
+                  Ver el contrato <IcoExterno />
+                </a>
+              )}
+              {ultimaLib && dep ? (
+                <a className={`${btn} border border-solid border-white/25 bg-transparent text-white hover:border-white/60`} href={txUrl(dep, ultimaLib.tx)} target="_blank" rel="noreferrer">
+                  Ver el último pago <IcoExterno />
+                </a>
+              ) : (
+                stellar && (
+                  <a className={`${btn} border border-solid border-white/25 bg-transparent text-white hover:border-white/60`} href="/pago">
+                    Ver un pago, paso a paso
+                  </a>
+                )
+              )}
+              <Link className={`${btn} border border-solid border-white/25 bg-transparent text-white hover:border-white/60`} href="/fundamentos">
+                Cómo funciona por dentro
+              </Link>
+            </Revelar>
           </div>
-          <nav className="pie-col" aria-label="brasa">
-            <b>brasa</b>
-            <a href="#mapa">Mapa</a>
-            <a href="#donar">Donar</a>
-            <Link href="/fundamentos">Fundamentos</Link>
-          </nav>
-          <nav className="pie-col" aria-label="Verificar">
-            <b>Verificar</b>
-            {dep && codigoUrl(dep) && (
-              <a href={codigoUrl(dep)} target="_blank" rel="noreferrer">
-                Contrato verificado <IcoExterno />
-              </a>
-            )}
+        </section>
+
+        <BotonFlotante />
+      </main>
+
+      {/* 6 · Pie */}
+      <footer className="bg-papel font-sans text-tinta-2">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-start justify-between gap-8 px-5 py-12">
+          <div>
+            <Logo height={34} claro />
+            <p className="m-0 mt-2 font-display text-lg font-bold text-tinta">Ayuda a tiempo, recursos a la vista.</p>
+            <p className="m-0 mt-1 text-sm">Hecho en Chaco para el mundo · Juan Facundo Ayala y Gastón Persoglia</p>
+          </div>
+          <nav className="grid gap-2 text-[15px]" aria-label="Enlaces">
+            <Link className={enlace} href="/fundamentos">Fundamentos</Link>
+            <a className={enlace} href="https://github.com/jfacundoayala/brasa" target="_blank" rel="noreferrer">Código en GitHub</a>
             {dep && addrUrl(dep, dep.fund) && (
-              <a href={addrUrl(dep, dep.fund)} target="_blank" rel="noreferrer">
-                Movimientos del fondo <IcoExterno />
-              </a>
+              <a className={enlace} href={addrUrl(dep, dep.fund)} target="_blank" rel="noreferrer">Movimientos del fondo</a>
             )}
-            <a href="https://github.com/jfacundoayala/brasa" target="_blank" rel="noreferrer">
-              Código en GitHub <IcoExterno />
-            </a>
+            <Link className={enlace} href="/links">Todos los enlaces</Link>
           </nav>
-          <div className="pie-col">
-            <b>Datos</b>
-            <span>Focos: NASA FIRMS (VIIRS)</span>
-            <span>Aviso rápido: GOES-19 (INPE)</span>
-            <span>Mapa: Esri, Vantor, Earthstar Geographics y © OpenStreetMap contributors</span>
-            <span>Red: Avalanche Fuji</span>
-          </div>
         </div>
-        <p className="pie-base">Hecho en Chaco para el mundo · Argentina Space 2026 · Track Avalanche · Juan Facundo Ayala y Gastón Persoglia</p>
+        <p className="m-0 border-0 border-t border-solid border-linea px-5 py-5 text-center text-xs">
+          Focos: NASA FIRMS (VIIRS) · Aviso rápido: GOES-19 (INPE) · Mapa: Esri, Vantor, Earthstar Geographics y © OpenStreetMap contributors · Red: {stellar ? "Stellar (red de prueba)" : redName}
+        </p>
       </footer>
-    </>
+    </MotionConfig>
   );
 }
 
@@ -1450,7 +886,7 @@ function BotonFlotante() {
     });
     const observados = new Set<Element>();
     const observar = () => {
-      for (const el of [document.querySelector(".espacio"), document.querySelector(".hero-acciones"), document.getElementById("donar")]) {
+      for (const el of [document.querySelector(".espacio"), document.querySelector(".espacio-acciones"), document.getElementById("donar")]) {
         if (el && !observados.has(el)) {
           observados.add(el);
           io.observe(el);
@@ -1468,15 +904,6 @@ function BotonFlotante() {
     <a className={`btn btn-flotante${visible ? " visible" : ""}`} href="#donar" aria-hidden={!visible} tabIndex={visible ? 0 : -1}>
       Donar ahora
     </a>
-  );
-}
-
-/** Monto con su unidad y el ícono de dólar digital, para que nunca quede un número suelto. */
-function Monto({ v }: { v: string }) {
-  return (
-    <b className="monto">
-      {v} <IconoUsdc /> USDC
-    </b>
   );
 }
 

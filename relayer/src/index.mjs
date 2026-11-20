@@ -4,11 +4,14 @@
 //   node src/index.mjs reportar            Cuenta focos, firma dos reportes (dos sensores) y llama a reportFire (las DOS claves en un solo proceso: solo demo).
 //   node src/index.mjs firmar --oraculo N  Cada oráculo firma SU reporte con SU clave y escribe firma-oraculoN.json (sin claves).
 //   node src/index.mjs enviar f0.json f1.json  Una persona manda el par de firmas al contrato (así los oráculos son de verdad independientes).
+//   node src/index.mjs reportar-stellar    Cuenta focos por capas y manda el par de reportes al contrato de Stellar.
+//                                          Claves: ORACLE0_SECRET, ORACLE1_SECRET y SENDER_SECRET en el entorno. Con --simular no envía.
 //   node src/index.mjs verificar-hash      Muestra la huella (dataHash) de los datos de cada sensor.
 //   node src/index.mjs verificar-hash --tx 0x…
 //                                          Lee un reportFire de la cadena, recalcula las huellas y dice si coinciden.
 //
 // Opciones:  --live  baja datos de la API de FIRMS (necesita MAP_KEY en el entorno).
+//            --publico  baja los archivos públicos de 48 h de FIRMS (sin clave). Cuenta como dato en vivo.
 //            Sin --live usa los datos reales guardados en sample-data/ ("datos guardados", se avisa en pantalla).
 //            Para firmar y reportar, los datos guardados solo valen en la cadena local (31337): en Fuji se exige --live
 //            y el contrato v2 además rechaza datos de NASA de más de 24 h.
@@ -20,9 +23,11 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Contract, JsonRpcProvider, HDNodeWallet, Mnemonic, verifyTypedData } from "ethers";
-import { BBOX, POLIGONO_SALTA, SENSORES, SENSOR_EXTRA, bajarFirmsTexto, parseCsv, cargarCsvLocal, nivelConfianza, resumir, cruzarSensores, huellaPoligono } from "./firms.mjs";
+import { BBOX, POLIGONO_SALTA, SENSORES, SENSOR_EXTRA, bajarFirmsTexto, bajarFirmsPublicoTexto, parseCsv, cargarCsvLocal, nivelConfianza, resumir, cruzarSensores, huellaPoligono } from "./firms.mjs";
 import { firmarReporte, nuevoNonce, dominio, TIPOS } from "./reporte.mjs";
 import { agruparIncendios } from "./incendios.mjs";
+import { cargarMapas, contarPorCapas } from "./capas.mjs";
+import { enviarReportes, leerZona } from "./stellar.mjs";
 import { guardarDatosDelReporte, sello } from "./archivo.mjs";
 import { decodificarReportFire, eventoDelRecibo, verificarReportes } from "./verificar.mjs";
 
@@ -36,7 +41,8 @@ const abiFondo = () =>
 
 const args = process.argv.slice(2);
 const orden = args[0];
-const vivo = args.includes("--live");
+const publico = args.includes("--publico");
+const vivo = args.includes("--live") || publico;
 const opcion = (nombre) => {
   const i = args.indexOf(nombre);
   if (i === -1) return undefined;
@@ -46,6 +52,11 @@ const opcion = (nombre) => {
 };
 const muestras = resolve(opcion("--datos") ?? resolve(aqui, "..", "sample-data"));
 
+// Mapas de las capas de detección (fuentes fijas y uso del suelo). Van en el repo, con su huella.
+const mapas = cargarMapas(new URL("../sample-data/", import.meta.url));
+// Detalle del conteo capa por capa de la última lectura.
+let capas;
+
 // CSV tal cual llegó de FIRMS en esta corrida (solo con --live), para guardarlo junto al reporte.
 const crudos = {};
 
@@ -53,7 +64,10 @@ async function leerDatos() {
   const out = {};
   for (const s of [...SENSORES, SENSOR_EXTRA]) {
     let filas;
-    if (vivo) {
+    if (publico) {
+      crudos[s.clave] = await bajarFirmsPublicoTexto(s.publico);
+      filas = parseCsv(crudos[s.clave]);
+    } else if (vivo) {
       const key = process.env.MAP_KEY;
       if (!key) throw new Error("Con --live hace falta MAP_KEY en el entorno (la sacás gratis en firms.modaps.eosdis.nasa.gov/api/map_key).");
       crudos[s.clave] = await bajarFirmsTexto(s.fuenteApi, key);
@@ -63,8 +77,22 @@ async function leerDatos() {
     }
     out[s.clave] = resumir(filas);
   }
-  return cruzarSensores(out); // suma a cada sensor VIIRS los focos que el otro satélite también vio a menos de 2 km
+  cruzarSensores(out); // regla anterior: focos que el otro satélite también vio a menos de 2 km (`confirmados`)
+  // Regla vigente: el incendio más grande que ven los dos satélites, sin fuentes fijas ni cultivos (`incendio`).
+  capas = contarPorCapas(out, SENSORES.map((s) => s.clave), mapas);
+  return out;
 }
+
+/** Qué incendio se reporta y, si hay uno que todavía no persiste, cuál queda en espera. */
+function textoIncendio() {
+  const { incendio: i, enEspera: e, diasMin } = capas;
+  const lineas = [i ? `Incendio elegido: ${i.lat}, ${i.lon}, visto en ${i.dias} días y ${i.pasadas} pasadas.` : `Ningún incendio visto por los dos satélites en ${diasMin} días distintos.`];
+  if (e) lineas.push(`En espera: ${e.lat}, ${e.lon}, ${e.focos} focos, visto en ${e.dias} día. No se reporta hasta que se vea en ${diasMin}.`);
+  return lineas;
+}
+
+const textoCapas = (s, c) =>
+  `${s.nombre}: ${c.enIncendio} focos en el incendio (alta confianza ${c.altaConfianza} → sin fuentes fijas ${c.sinFuentesFijas} → fuera de cultivo ${c.fueraDeCultivo} → en el incendio más grande ${c.enIncendio})`;
 
 /** Con --live, deja una copia de los CSV usados para que cualquiera pueda rehacer la huella. */
 function guardarCopia(datos) {
@@ -96,8 +124,9 @@ async function preparar() {
     fuente: "NASA FIRMS (VIIRS NOAA-20, VIIRS NOAA-21, MODIS)",
     zona: { nombre: "Salta", bbox: BBOX, poligono: POLIGONO_SALTA },
     conteo: Object.fromEntries(
-      Object.entries(datos).map(([k, r]) => [k, { total: r.total, altaConfianza: r.altaConfianza, ...(r.confirmados !== undefined && { confirmados: r.confirmados }) }])
+      Object.entries(datos).map(([k, r]) => [k, { total: r.total, altaConfianza: r.altaConfianza, ...(r.confirmados !== undefined && { confirmados: r.confirmados }), ...(r.incendio !== undefined && { incendio: r.incendio }) }])
     ),
+    capas: { ...capas, mapas: mapas.huellas },
     ultimaDeteccionUtc: Math.max(0, ...SENSORES.map((s) => datos[s.clave].ultimaDeteccionUtc)),
     incendios: agruparIncendios(focos),
     focos,
@@ -160,10 +189,8 @@ function polígonoDeLaZona(zona) {
 }
 
 function chequearMinimo(s, r, zona, verbo) {
-  if (r.confirmados < Number(zona.minHotspots)) {
-    throw new Error(
-      `${s.nombre}: ${r.confirmados} focos confirmados por los dos satélites (de ${r.altaConfianza} de alta confianza); el mínimo de la zona es ${zona.minHotspots}. No ${verbo}.`
-    );
+  if (r.incendio < Number(zona.minHotspots)) {
+    throw new Error(`${textoCapas(s, capas.porSensor[s.clave])}; el mínimo de la zona es ${zona.minHotspots}. No ${verbo}.`);
   }
 }
 
@@ -199,15 +226,15 @@ async function reportar() {
       zoneId: dep.zoneId,
       polygonHash,
       sensor: s.id,
-      hotspots: r.confirmados,
+      hotspots: r.incendio,
       observedAt,
       dataTime,
       dataHash: r.dataHash,
       nonce,
     });
     firmas.push(f);
-    hotspots.push(r.confirmados);
-    console.log(`${s.nombre}: ${r.confirmados} focos confirmados por los dos satélites (de ${r.altaConfianza} de alta confianza), dato de ${new Date(dataTime * 1000).toISOString()}, firma de ${f.firmante}`);
+    hotspots.push(r.incendio);
+    console.log(`${textoCapas(s, capas.porSensor[s.clave])}, dato de ${new Date(dataTime * 1000).toISOString()}, firma de ${f.firmante}`);
   }
   if (!vivo) console.log("AVISO: cadena local con datos GUARDADOS y hora simulada (\"el satélite pasó hace 30 min\"). En Fuji esto no se puede.");
 
@@ -310,7 +337,7 @@ async function firmar() {
   chequearMinimo(s, r, zona, "firmo");
   const f = await firmarReporte({
     clave, chainId: Number(red.chainId), fondo: dep.fund, zoneId: dep.zoneId, polygonHash, sensor: s.id,
-    hotspots: r.confirmados, observedAt, dataTime, dataHash: r.dataHash, nonce: nuevoNonce(),
+    hotspots: r.incendio, observedAt, dataTime, dataHash: r.dataHash, nonce: nuevoNonce(),
   });
   const salida = {
     version: 3,
@@ -323,7 +350,7 @@ async function firmar() {
   };
   const archivo = resolve(process.cwd(), `firma-oraculo${n}.json`);
   writeFileSync(archivo, JSON.stringify(salida, null, 2) + "\n");
-  console.log(`${s.nombre}: ${r.confirmados} focos confirmados por los dos satélites (de ${r.altaConfianza} de alta confianza), dato de ${new Date(dataTime * 1000).toISOString()}, firma de ${f.firmante}`);
+  console.log(`${textoCapas(s, capas.porSensor[s.clave])}, dato de ${new Date(dataTime * 1000).toISOString()}, firma de ${f.firmante}`);
   console.log(`Escribí ${archivo}. No tiene claves: se puede pasar al otro oráculo.`);
 }
 
@@ -357,6 +384,42 @@ async function enviar() {
   });
 }
 
+/** Cuenta por capas y manda el par de reportes al contrato de Stellar. Las DOS claves en un proceso: solo demo. */
+async function reportarStellar() {
+  const archivo = process.env.STELLAR_DEPLOYMENT_FILE ?? resolve(raiz, "stellar", "deployment.json");
+  if (!existsSync(archivo)) throw new Error(`No encuentro ${archivo}.`);
+  const dep = JSON.parse(readFileSync(archivo, "utf8"));
+  if (!vivo) throw new Error("A Stellar se reporta solo con datos en vivo (--live o --publico).");
+  const datos = await leerDatos();
+  guardarCopia(datos);
+  const zona = await leerZona(dep, dep.federacion);
+  const polygonHash = huellaPoligono().replace(/^0x/, "");
+  if (polygonHash !== Buffer.from(zona.polygon_hash).toString("hex")) throw new Error("El polígono local no es el de la zona en el contrato. No envío.");
+  const ahora = Math.floor(Date.now() / 1000) - 30;
+  const reportes = SENSORES.map((s) => {
+    const r = datos[s.clave];
+    console.log(textoCapas(s, capas.porSensor[s.clave]));
+    return { zoneId: dep.zona.id, polygonHash, sensor: s.id, hotspots: r.incendio, observedAt: ahora, dataTime: Math.min(r.ultimaDeteccionUtc, ahora), dataHash: r.dataHash, nombre: s.nombre, ultima: r.ultimaDeteccionUtc };
+  });
+  for (const l of textoIncendio()) console.log(l);
+  const menor = Math.min(...reportes.map((r) => r.hotspots));
+  if (menor < zona.min_hotspots) {
+    console.log(`No envío: el incendio tiene ${menor} focos y el mínimo de la zona es ${zona.min_hotspots}. No hay nada que pagar.`);
+    return;
+  }
+  for (const r of reportes) {
+    if (!r.ultima || ahora - r.dataTime > MAX_DATA_AGE) throw new Error(`${r.nombre}: el dato más nuevo de NASA es de hace más de 24 h. No envío: el contrato lo rechazaría.`);
+  }
+  if (args.includes("--simular")) {
+    console.log(`Simulación: se enviarían ${reportes.map((r) => r.hotspots).join(" y ")} focos. No envié nada.`);
+    return;
+  }
+  const { ORACLE0_SECRET, ORACLE1_SECRET, SENDER_SECRET } = process.env;
+  if (!ORACLE0_SECRET || !ORACLE1_SECRET) throw new Error("Faltan ORACLE0_SECRET y ORACLE1_SECRET en el entorno.");
+  const r = await enviarReportes(dep, reportes, { oraculos: [ORACLE0_SECRET, ORACLE1_SECRET], remitente: SENDER_SECRET ?? ORACLE0_SECRET });
+  console.log(`Estado: ${r.estado}. Transacción: ${r.hash}${r.evento !== null ? `. Evento #${r.evento}` : ""}`);
+}
+
 async function verificarHash() {
   const datos = await leerDatos();
   const origen = vivo ? "API de FIRMS en vivo" : `datos guardados en ${muestras}`;
@@ -367,8 +430,13 @@ async function verificarHash() {
     for (const s of SENSORES) {
       const r = datos[s.clave];
       const hora = r.ultimaDeteccionUtc ? new Date(r.ultimaDeteccionUtc * 1000).toISOString() : "sin datos";
-      console.log(`  ${s.nombre}: ${r.dataHash}  (${r.altaConfianza} focos de alta confianza en Salta, ${r.confirmados} confirmados por el otro satélite a menos de 2 km; dato más nuevo: ${hora})`);
+      console.log(`  ${s.nombre}: ${r.dataHash}  (dato más nuevo: ${hora})`);
+      console.log(`    ${textoCapas(s, capas.porSensor[s.clave])}`);
+      console.log(`    regla anterior: ${r.confirmados} confirmados por el otro satélite a menos de 2 km`);
     }
+    for (const l of textoIncendio()) console.log(`  ${l}`);
+    console.log(`  Mapa de fuentes fijas: ${mapas.huellas.fuentesFijas}`);
+    console.log(`  Mapa de uso del suelo: ${mapas.huellas.usoDelSuelo}`);
     console.log(`  Polígono (polygonHash): ${huellaPoligono()}`);
     console.log("Para comparar con la cadena: node src/index.mjs verificar-hash --tx <hash de la transacción reportFire>");
     return;
@@ -401,7 +469,7 @@ async function verificarHash() {
       console.log("    (reporte del contrato v1: no trae hora del dato ni polígono, y los focos no se cruzaban entre satélites)");
       continue;
     }
-    console.log(`    focos confirmados en la cadena: ${r.focosCadena}; recalculados: ${r.focosRecalculados} (de ${r.focosAltaConfianza} de alta confianza)${r.focosOk ? "" : "  <- distintos"}`);
+    console.log(`    focos en la cadena: ${r.focosCadena}; recalculados: ${r.focosRecalculados} (de ${r.focosAltaConfianza} de alta confianza)${r.focosOk ? `, regla: ${r.regla}` : "  <- distintos"}`);
     const iso = (t) => (t ? new Date(t * 1000).toISOString() : "sin dato");
     console.log(`    hora del dato en la cadena: ${iso(r.horaCadena)}; recalculada: ${iso(r.horaRecalculada)}${r.horaOk ? "" : "  <- distinta"}`);
     console.log(`    polígono: ${r.poligonoOk ? "el mismo" : `distinto (cadena ${r.poligonoCadena}, local ${r.poligonoLocal})`}`);
@@ -426,9 +494,10 @@ try {
   else if (orden === "reportar") await reportar();
   else if (orden === "firmar") await firmar();
   else if (orden === "enviar") await enviar();
+  else if (orden === "reportar-stellar") await reportarStellar();
   else if (orden === "verificar-hash") await verificarHash();
   else {
-    console.log("Uso: node src/index.mjs preparar | reportar | firmar --oraculo 0|1 | enviar <firma0.json> <firma1.json> | verificar-hash [--tx <hash>]   [--live] [--datos <carpeta>] [--rpc <url>]");
+    console.log("Uso: node src/index.mjs preparar | reportar | reportar-stellar [--simular] | firmar --oraculo 0|1 | enviar <firma0.json> <firma1.json> | verificar-hash [--tx <hash>]   [--live | --publico] [--datos <carpeta>] [--rpc <url>]");
     process.exit(2);
   }
 } catch (e) {

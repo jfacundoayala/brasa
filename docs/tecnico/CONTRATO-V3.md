@@ -1,5 +1,7 @@
 # Contrato v3: qué cambió y dónde está
 
+> **Primera versión.** Este documento describe el contrato en Solidity que se usó durante el hackathon. La versión vigente corre en Stellar: ver [`stellar/README.md`](../../stellar/README.md).
+
 > Desplegado y verificado en Avalanche Fuji el 13/11/2026. Es el contrato que lee la web (`web/public/deployment.fuji.json`).
 
 ## Dónde está

@@ -1,5 +1,7 @@
 # Correr brasa en local y en Fuji
 
+> **Primera versión.** Este documento describe el contrato en Solidity que se usó durante el hackathon. La versión vigente corre en Stellar: ver [`stellar/README.md`](../../stellar/README.md).
+
 ## En un nodo local
 
 ```bash

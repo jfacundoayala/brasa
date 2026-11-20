@@ -120,3 +120,18 @@ test("verificar-hash: en un reporte v1 una huella cambiada no coincide", () => {
   assert.equal(r0.ok, false);
   assert.equal(r1.ok, true);
 });
+
+test("verificar-hash: acepta la regla por capas o el cruce anterior, y dice con cuál coincide", async () => {
+  const conCapas = { noaa20: { ...datos.noaa20, incendio: 14 }, noaa21: { ...datos.noaa21, incendio: datos.noaa21.confirmados } };
+  const porCapas = await calldata({ focos0: 14 });
+  const [a] = verificarReportes(decodificarReportFire(porCapas.data), conCapas);
+  assert.equal(a.focosOk, true);
+  assert.match(a.regla, /capas/);
+  const porCruce = await calldata();
+  const [b] = verificarReportes(decodificarReportFire(porCruce.data), conCapas);
+  assert.equal(b.focosOk, true);
+  assert.match(b.regla, /anterior/);
+  const inventado = await calldata({ focos0: 15 });
+  const [c] = verificarReportes(decodificarReportFire(inventado.data), conCapas);
+  assert.equal(c.focosOk, false);
+});

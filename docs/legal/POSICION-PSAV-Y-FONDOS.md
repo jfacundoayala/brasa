@@ -35,7 +35,7 @@ Además, la RG 1172/2026 deja afuera, en forma expresa (art. 2°):
 - **Envío de la liberación:** abierto a cualquiera. La plataforma brasa ofrece un relayer por comodidad, pero no es necesario.
 - **Lo que le queda a brasa:** el software (la web y el código abierto) y la comisión como pago por su servicio.
 
-**Hoy, en Fuji**, esos roles los opera el equipo, en una red de prueba sin dinero real. **Paso siguiente:** en el piloto pasan a terceros. El contrato v3 ya permite ese traspaso: la federación pasa en dos pasos (`transferFederation`) y las claves de oráculo rotan con demora pública.
+**Hoy, en la red de prueba**, esos roles los opera el equipo, en una red de prueba sin dinero real. **Paso siguiente:** en el piloto pasan a terceros. El contrato ya permite ese traspaso: la federación pasa en dos pasos (`transfer_federation`) y las claves de oráculo rotan con demora pública.
 
 ## 3. De quién es el dinero mientras está en el contrato
 

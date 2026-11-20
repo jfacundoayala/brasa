@@ -43,10 +43,10 @@ export const BBOX = [-68.6, -26.4, -62.3, -22.0];
 // Sensores del MVP. El contrato exige DOS firmas de DOS sensores distintos.
 // Aclaración honesta: los dos son VIIRS procesados por NASA FIRMS; son independientes por satélite, no por operador.
 export const SENSORES = [
-  { id: 0, clave: "noaa20", nombre: "VIIRS NOAA-20", archivo: "firms-viirs-noaa20-salta.csv", fuenteApi: "VIIRS_NOAA20_NRT" },
-  { id: 1, clave: "noaa21", nombre: "VIIRS NOAA-21", archivo: "firms-viirs-noaa21-salta.csv", fuenteApi: "VIIRS_NOAA21_NRT" },
+  { id: 0, clave: "noaa20", nombre: "VIIRS NOAA-20", archivo: "firms-viirs-noaa20-salta.csv", fuenteApi: "VIIRS_NOAA20_NRT", publico: "noaa-20-viirs-c2/csv/J1_VIIRS_C2_South_America_48h.csv" },
+  { id: 1, clave: "noaa21", nombre: "VIIRS NOAA-21", archivo: "firms-viirs-noaa21-salta.csv", fuenteApi: "VIIRS_NOAA21_NRT", publico: "noaa-21-viirs-c2/csv/J2_VIIRS_C2_South_America_48h.csv" },
 ];
-export const SENSOR_EXTRA = { clave: "modis", nombre: "MODIS", archivo: "firms-modis-salta.csv", fuenteApi: "MODIS_NRT" };
+export const SENSOR_EXTRA = { clave: "modis", nombre: "MODIS", archivo: "firms-modis-salta.csv", fuenteApi: "MODIS_NRT", publico: "modis-c6.1/csv/MODIS_C6_1_South_America_48h.csv" };
 
 export function parseCsv(texto) {
   const lineas = texto.trim().split(/\r?\n/);
@@ -102,6 +102,22 @@ export async function bajarFirmsTexto(fuenteApi, mapKey, dias = 2, bbox = BBOX) 
   const t = await r.text();
   if (!t.startsWith("latitude")) throw new Error(`FIRMS ${fuenteApi}: respuesta inesperada`);
   return t;
+}
+
+/**
+ * Lo mismo sin clave: el archivo público de las últimas 48 h de Sudamérica, recortado al rectángulo de la zona.
+ * Devuelve el CSV recortado (encabezado y filas tal cual las publica la NASA), para guardarlo y rehacer la huella.
+ */
+export async function bajarFirmsPublicoTexto(ruta, bbox = BBOX) {
+  const r = await fetch(`https://firms.modaps.eosdis.nasa.gov/data/active_fire/${ruta}`, { signal: AbortSignal.timeout(120_000) });
+  if (!r.ok) throw new Error(`FIRMS ${ruta}: HTTP ${r.status}`);
+  const lineas = (await r.text()).trim().split(/\r?\n/);
+  if (!lineas[0]?.startsWith("latitude")) throw new Error(`FIRMS ${ruta}: respuesta inesperada`);
+  const adentro = lineas.slice(1).filter((l) => {
+    const [lat, lon] = l.split(",").map(Number);
+    return lon >= bbox[0] && lat >= bbox[1] && lon <= bbox[2] && lat <= bbox[3];
+  });
+  return [lineas[0], ...adentro].join("\n") + "\n";
 }
 
 /** Resume los focos de un sensor dentro de la zona: total, alta confianza, hora de la última detección y huella. */

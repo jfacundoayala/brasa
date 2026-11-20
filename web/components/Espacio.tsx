@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import Brasas from "./Brasas";
-import { Gravedad } from "./Llamas";
 import type { EstadoSat, Punto } from "./Globo";
 import { leerTles, refrescarTles, type Tle } from "@/lib/tle";
 
@@ -67,6 +66,22 @@ function Orbitas({ puntos, activo, quieto }: { puntos: Punto[]; activo: boolean;
   // El globo se monta cuando el navegador queda libre, para no trabar la primera carga.
   useEffect(() => {
     const montar = () => setLibre(true);
+    // En el celular el 3D es lo más pesado: espera al primer toque o desplazamiento (o unos segundos),
+    // así la página responde enseguida.
+    if (window.matchMedia("(max-width: 767px), (pointer: coarse)").matches) {
+      const gestos = ["pointerdown", "touchstart", "scroll", "keydown"] as const;
+      const soltar = () => {
+        gestos.forEach((g) => window.removeEventListener(g, alGesto));
+        clearTimeout(reloj);
+      };
+      const alGesto = () => {
+        soltar();
+        montar();
+      };
+      const reloj = setTimeout(alGesto, 6000);
+      gestos.forEach((g) => window.addEventListener(g, alGesto, { passive: true, once: true }));
+      return soltar;
+    }
     if ("requestIdleCallback" in window) {
       const id = requestIdleCallback(montar, { timeout: 2000 });
       return () => cancelIdleCallback(id);
@@ -156,17 +171,7 @@ export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: b
             Cuando dos satélites de la NASA confirman un incendio, el fondo paga a los bomberos y a los damnificados.{" "}
             <b>Ayuda a tiempo, recursos a la vista.</b>
           </p>
-          <div className="espacio-niveles entra" {...entra(3)}>
-            <span>Cada incendio, en tres niveles:</span>
-            <ul>
-              {([1, 2, 3] as const).map((n) => (
-                <li key={n} className={`nivel-chip n${n}`}>
-                  <Gravedad nivel={n} px={14} /> {["Leve", "Medio", "Grave"][n - 1]}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="espacio-acciones entra" {...entra(4)}>
+          <div className="espacio-acciones entra" {...entra(3)}>
             <a className="btn btn-hero" href="#donar">
               Donar ahora
             </a>
@@ -181,8 +186,8 @@ export default function Espacio({ puntos, enVivo }: { puntos: Punto[]; enVivo: b
       <p className="espacio-creditos">
         Tierra: <a href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/" target="_blank" rel="noreferrer">NASA Blue Marble</a> · Órbitas: TLE de NORAD (SGP4) · satélites fuera de escala · iluminación ilustrativa
       </p>
-      <a className="espacio-bajar" href="#inicio">
-        <span>Cómo ayuda</span>
+      <a className="espacio-bajar" href="#como">
+        <span>Cómo funciona</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path d="M6 9l6 6 6-6" />
         </svg>

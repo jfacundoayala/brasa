@@ -2,7 +2,7 @@
 
 Qué partes tiene brasa, en quién confía cada una, qué hay que proteger y qué frena cada ataque. Complementa a [`SECURITY.md`](../../SECURITY.md), que lista las medidas, y a [`LEEME.md`](LEEME.md), que lista las revisiones del contrato.
 
-Hoy corre en Avalanche Fuji, la red de prueba, con USDC de prueba.
+Hoy corre en la red de prueba de Stellar, con USDC de prueba.
 
 ## Componentes
 
@@ -27,15 +27,15 @@ Hoy corre en Avalanche Fuji, la red de prueba, con USDC de prueba.
 1. El saldo en USDC de cada zona.
 2. Que el dinero llegue solo a los cuarteles asignados y a las entidades de asistencia acreditadas, con la regla pública.
 3. Las claves de los dos firmantes y la de la federación.
-4. La dirección del contrato que usa la web (`web/public/deployment.fuji.json`).
+4. La dirección del contrato que usa la web (`web/public/deployment.json`).
 
 ## Amenazas y qué las frena
 
 | Qué intenta alguien | Qué lo frena |
 |---|---|
-| Enviar a `reportFire` un reporte inventado | El contrato exige dos firmas EIP-712 válidas, una de cada clave, sobre dos satélites distintos |
-| Usar una clave de firma robada | Una sola firma no libera nada. La federación cambia esa clave con una propuesta pública y una demora |
-| Repetir un reporte, o usarlo en otra red o en otro contrato | Cada firma lleva un número de uso único, el identificador de la red y la dirección del contrato. Un mismo dato de la NASA libera una sola vez |
+| Enviar a `report_fire` un reporte inventado | El contrato exige que cada reporte lo autorice la cuenta del oráculo de ese satélite. Son dos cuentas y dos satélites distintos |
+| Usar la clave robada de un oráculo | Un solo reporte no libera nada. La federación cambia ese oráculo con una propuesta pública y una demora |
+| Repetir un reporte, o usarlo en otra red o en otro contrato | Cada autorización vale una sola vez, para esa red y ese contrato. Un mismo dato de la NASA libera una sola vez |
 | Liberar con datos viejos | El reporte vale 6 horas, el dato 24 horas y los dos satélites tienen que haber visto el fuego con menos de 3 horas de diferencia |
 | Cobrar de más | La meta es el techo: `focos × 14 ha × costo por hectárea`, con el menor de los dos conteos. Hay un tope por incendio y una espera entre liberaciones |
 | Acreditarse justo antes de un incendio para cobrar | Una credencial nueva queda visible en la cadena y recién cobra pasada la demora |
@@ -43,15 +43,16 @@ Hoy corre en Avalanche Fuji, la red de prueba, con USDC de prueba.
 | Cambiar la regla de una zona después de recibir donaciones | Los parámetros de la zona y la comisión quedan fijos al crearse |
 | Publicar una firma falsa en el buzón | El buzón acepta solo a los firmantes, y el contrato comprueba cada firma contra las dos claves registradas |
 | Alterar los datos externos que muestra la web | Solo cambia lo que se ve. La meta que libera el contrato sale de los reportes firmados |
-| Cambiar la dirección del contrato en la web | El archivo entra por pull request con tests. La dirección está publicada y su código, verificado en Sourcify. La billetera la muestra antes de firmar |
-| Trabar todos los pagos con una billetera que los rechaza | Ese monto vuelve al fondo y los demás destinatarios cobran igual |
-| Reentrar al contrato durante un pago | `ReentrancyGuard`, `SafeERC20` y un único token, fijado al desplegar |
+| Cambiar la dirección del contrato en la web | El archivo entra por pull request con tests. La dirección está publicada y la billetera la muestra antes de firmar |
+| Trabar todos los pagos con una cuenta que no puede cobrar | Ese monto queda en el fondo y los demás destinatarios cobran igual |
+| Reentrar al contrato durante un pago | La red no permite reentradas, y el contrato usa un único token, fijado al desplegar |
+| Cobrar por una quema de campo o una chimenea | Las capas de detección descartan fuentes fijas, focos sobre cultivos, focos sueltos y lo que no persiste dos días |
 | Subir una clave privada al repo | `.gitignore`, un hook local y el CI buscan claves en cada cambio. Las claves de firma no están en ningún servidor |
-| Comprometer una dependencia | Versiones exactas y lockfiles en `contracts/`, `relayer/` y `web/` |
+| Comprometer una dependencia | Versiones exactas y lockfiles en `stellar/`, `relayer/` y `web/` |
 
 ## Servicios externos de la web
 
-El navegador consulta NASA FIRMS (a través de un archivo que genera el CI), el servidor de focos GOES-19 del INPE, Open-Meteo, dolarapi.com, CoinGecko, Routescan, el nodo público de Fuji, las imágenes satelitales de Esri, el relieve de AWS y un servicio de datos de órbita, con una copia de respaldo en el repo. Ninguno de esos datos entra al contrato.
+El navegador consulta NASA FIRMS (a través de un archivo que genera el CI), el servidor de focos GOES-19 del INPE, Open-Meteo, dolarapi.com, el nodo público de la red de prueba de Stellar, las imágenes satelitales de Esri, el relieve de AWS y un servicio de datos de órbita, con una copia de respaldo en el repo. Ninguno de esos datos entra al contrato.
 
 ## Límites de esta etapa
 

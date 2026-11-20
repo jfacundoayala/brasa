@@ -6,10 +6,12 @@ const DATOS = [
   "https://api.coingecko.com", // precio de AVAX, de referencia
   "https://raw.githubusercontent.com", // focos de la NASA, de la rama "datos" del repo
   "https://dataserver-coids.inpe.br", // aviso rápido (GOES-19)
-  "https://tle.ivanstanojevic.me", // órbitas de NOAA-20 y NOAA-21
+  "https://celestrak.org", // órbitas de NOAA-20 y NOAA-21
+  "https://tle.ivanstanojevic.me", // órbitas, de respaldo
   "https://api.open-meteo.com", // clima en el incendio
   "https://server.arcgisonline.com", // imagen satelital del mapa
   "https://s3.amazonaws.com", // relieve del mapa
+  "https://soroban-testnet.stellar.org", // lectura y envío al contrato de Stellar (red de prueba)
 ];
 // next dev necesita eval para recargar en caliente; en producción no se permite.
 const DEV = process.env.NODE_ENV !== "production";
@@ -17,7 +19,7 @@ const CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${DEV ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://stellar.creit.tech", // íconos de las billeteras de Stellar
   "font-src 'self' data:",
   `connect-src 'self' ${DATOS.join(" ")}${DEV ? " ws:" : ""}`,
   "worker-src 'self' blob:",
@@ -54,17 +56,17 @@ const nextConfig = {
   },
   async redirects() {
     const REPO = "https://github.com/jfacundoayala/brasa";
-    const FONDO = "0x96b950d62Cae3eE39c5325144c78d0CBDA9d6057";
-    // El pago y el contrato abren en el explorador oficial de Avalanche, que carga directo.
+    const FONDO = "CAE23TYOONXIZEHOYY4GZARITWVOFQBENRWHK7MCFM4Q7NRUJSVGVQR6";
+    const EXPLORADOR = "https://stellar.expert/explorer/testnet";
     // Links cortos para compartir: brasafund.vercel.app/deck, /repo, /contrato, etc.
     const cortos = [
       ["/video", "https://youtu.be/Kv2nUGe9D3A"],
       ["/one-pager", "/one-pager.pdf"],
       ["/deck", "/deck.pdf"],
       ["/repo", REPO],
-      ["/contrato", `https://build.avax.network/explorer/fuji/c-chain/address/${FONDO}`],
-      ["/codigo", `https://sourcify.dev/server/repo-ui/43113/${FONDO}`],
-      ["/pago", "https://build.avax.network/explorer/fuji/c-chain/tx/0xd35e6748a10d21081a05998893f4b3d8d2f42d2d89d438bcd22944d7edded4a3"],
+      ["/contrato", `${EXPLORADOR}/contract/${FONDO}`],
+      ["/codigo", `${REPO}/tree/main/stellar`],
+      ["/comprobante", `${EXPLORADOR}/tx/9789094c217e84c3aeb28836751057e77f98bc36a7056af1fd72b3fc445dd532`],
       ["/entrevista", `${REPO}/blob/main/docs/producto/VALIDACION-BOMBEROS.md`],
     ].map(([source, destination]) => ({ source, destination, permanent: false }));
     return [

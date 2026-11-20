@@ -1,0 +1,64 @@
+name: datos-nasa
+# Baja los focos de NASA FIRMS para Salta cada 3 horas y los guarda en la rama "datos".
+# La web lee focos.json de esa rama, así que no hace falta volver a publicarla con cada dato nuevo.
+# Necesita el secreto MAP_KEY en el repo (Settings → Secrets and variables → Actions). Sin el secreto no hace nada.
+# No usa claves de oráculo: solo baja datos, no firma ni envía nada a la cadena.
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datos-nasa
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    env:
+      MAP_KEY: ${{ secrets.MAP_KEY }}
+    steps:
+      - name: ¿Está cargado el secreto?
+        id: secreto
+        run: |
+          if [ -z "$MAP_KEY" ]; then
+            echo "::notice::Falta el secreto MAP_KEY: no se bajan datos."
+            echo "hay=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=si" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secreto.outputs.hay == 'si'
+      - uses: actions/setup-node@v4
+        if: steps.secreto.outputs.hay == 'si'
+        with:
+          node-version: 22
+      - name: Bajar focos en vivo
+        if: steps.secreto.outputs.hay == 'si'
+        working-directory: relayer
+        run: |
+          npm ci
+          node src/index.mjs preparar --live
+          cp ../web/public/focos.json "$RUNNER_TEMP/focos.json"
+      - name: Guardar en la rama datos
+        if: steps.secreto.outputs.hay == 'si'
+        run: |
+          git config user.name "brasa-datos"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -- .
+          if git fetch --depth=1 origin datos; then
+            git checkout -B datos FETCH_HEAD
+          else
+            git checkout --orphan datos
+            git rm -rfq .
+          fi
+          cp "$RUNNER_TEMP/focos.json" focos.json
+          # La rama solo lleva datos: Vercel no tiene nada que publicar de acá.
+          mkdir -p web
+          echo '{ "git": { "deploymentEnabled": false } }' | tee vercel.json > web/vercel.json
+          git add focos.json vercel.json web/vercel.json
+          git commit -m "Datos: focos de NASA FIRMS"
+          git push origin datos

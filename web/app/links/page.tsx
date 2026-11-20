@@ -23,13 +23,13 @@ type Fila = { titulo: string; detalle: string; href: string; destacado?: boolean
 // Los links cortos (/deck, /repo, /contrato...) se definen en next.config.mjs.
 const FILAS: Fila[] = [
   { titulo: "Web", detalle: "El mapa de incendios, el fondo y cómo donar", href: "/", destacado: true },
-  ...(VIDEO ? [{ titulo: "Video de la demo", detalle: "El recorrido de brasa en menos de 3 minutos, con una donación en vivo", href: VIDEO }] : []),
+  ...(VIDEO ? [{ titulo: "Video", detalle: "El recorrido de la primera versión, en menos de 3 minutos", href: VIDEO }] : []),
   { titulo: "Resumen en una página", detalle: "El one-pager, en PDF", href: "/one-pager" },
   { titulo: "Presentación", detalle: "El deck, en PDF", href: "/deck" },
   { titulo: "Repositorio", detalle: "Todo el código, público", href: "/repo" },
-  { titulo: "Contrato en Avalanche Fuji", detalle: "El fondo, en el explorador", href: "/contrato" },
-  { titulo: "Código verificado", detalle: "Sourcify, con coincidencia exacta", href: "/codigo" },
-  { titulo: "Pago en vivo del 12/11", detalle: "El comprobante del pago a dos cuarteles y a familias damnificadas", href: "/pago" },
+  { titulo: "Contrato en Stellar", detalle: "El fondo, en el explorador de la red de prueba", href: "/contrato" },
+  { titulo: "Código del contrato", detalle: "Escrito en Rust, público y con sus tests", href: "/codigo" },
+  { titulo: "Un pago, paso a paso", detalle: "El pago de punta a punta del 19/11, explicado y con su comprobante", href: "/pago" },
   { titulo: "Entrevista de validación", detalle: "Con el Comandante Mayor del Cuartel de Bomberos Voluntarios de Salta", href: "/entrevista" },
   { titulo: "De dónde sale cada número", detalle: "Fundamentos, con cada fuente", href: "/fundamentos" },
 ];
@@ -44,20 +44,20 @@ export default function Links() {
         flexDirection: "column",
         alignItems: "center",
         padding: "48px 16px 56px",
-        background: "#14110F",
-        color: "#F4EEE8",
+        background: "var(--color-papel)",
+        color: "var(--color-tinta)",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/simbolo-brasa.svg" alt="" width={72} height={72} />
       <h1 style={{ fontSize: 34, margin: "14px 0 6px" }}>brasa</h1>
-      <p style={{ margin: 0, maxWidth: 440, textAlign: "center", color: "#B9ADA3", lineHeight: 1.5 }}>
+      <p style={{ margin: 0, maxWidth: 440, textAlign: "center", color: "var(--color-tinta-2)", lineHeight: 1.5 }}>
         Ayuda a tiempo, recursos a la vista. Cuando dos satélites de la NASA confirman un incendio, tu donación llega a los
         bomberos y a las familias afectadas.
       </p>
       <nav aria-label="Links de brasa" style={{ width: "100%", maxWidth: 480, marginTop: 28, display: "grid", gap: 12 }}>
         {FILAS.map((f) => {
-          const externo = f.href !== "/" && f.href !== "/fundamentos";
+          const externo = !["/", "/fundamentos", "/pago"].includes(f.href);
           return (
             <a
               key={f.titulo}
@@ -69,18 +69,18 @@ export default function Links() {
                 padding: "14px 18px",
                 borderRadius: 14,
                 textDecoration: "none",
-                background: f.destacado ? "#FF5A1F" : "#221C18",
-                border: f.destacado ? "1px solid #FF5A1F" : "1px solid #3a2e27",
-                color: f.destacado ? "#14110F" : "#F4EEE8",
+                background: f.destacado ? "var(--color-accion)" : "#fff",
+                border: f.destacado ? "1px solid var(--color-accion)" : "1px solid var(--color-linea)",
+                color: f.destacado ? "#fff" : "var(--color-tinta)",
               }}
             >
               <b style={{ fontSize: 17 }}>{f.titulo}</b>
-              <span style={{ fontSize: 14, color: f.destacado ? "#3a1a0a" : "#B9ADA3" }}>{f.detalle}</span>
+              <span style={{ fontSize: 14, color: f.destacado ? "#e3eefb" : "var(--color-tinta-2)" }}>{f.detalle}</span>
             </a>
           );
         })}
       </nav>
-      <p style={{ marginTop: 30, fontSize: 13, color: "#8f8379", textAlign: "center" }}>
+      <p style={{ marginTop: 30, fontSize: 13, color: "var(--color-tinta-2)", textAlign: "center" }}>
         Hecho en Chaco, Argentina, para el mundo · Juan Facundo Ayala y Gastón Persoglia
       </p>
     </main>
