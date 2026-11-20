@@ -1,7 +1,7 @@
 import type { Focos } from "./chain";
 
-// La acción datos-nasa baja los focos de NASA FIRMS cada 3 horas y los guarda en la rama "datos" del repo.
-// La web los lee de ahí para no tener que volver a publicarse con cada dato nuevo.
+// La rama "datos" del repo guarda un archivo de focos de NASA FIRMS. La web usa el más nuevo entre ese
+// y el que viaja con ella, así un dato nuevo no obliga a volver a publicar la web.
 const REMOTO = "https://raw.githubusercontent.com/jfacundoayala/brasa/datos/focos.json";
 
 const valido = (f: unknown): f is Focos => {

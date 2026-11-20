@@ -47,12 +47,12 @@ Hoy corre en la red de prueba de Stellar, con USDC de prueba.
 | Trabar todos los pagos con una cuenta que no puede cobrar | Ese monto queda en el fondo y los demás destinatarios cobran igual |
 | Reentrar al contrato durante un pago | La red no permite reentradas, y el contrato usa un único token, fijado al desplegar |
 | Cobrar por una quema de campo o una chimenea | Las capas de detección descartan fuentes fijas, focos sobre cultivos, focos sueltos y lo que no persiste dos días |
-| Subir una clave privada al repo | `.gitignore`, un hook local y el CI buscan claves en cada cambio. Las claves de firma no están en ningún servidor |
+| Subir una clave privada al repo | `.gitignore` y un hook local frenan cualquier commit con una clave. Las claves de firma no están en ningún servidor |
 | Comprometer una dependencia | Versiones exactas y lockfiles en `stellar/`, `relayer/` y `web/` |
 
 ## Servicios externos de la web
 
-El navegador consulta NASA FIRMS (a través de un archivo que genera el CI), el servidor de focos GOES-19 del INPE, Open-Meteo, dolarapi.com, el nodo público de la red de prueba de Stellar, las imágenes satelitales de Esri, el relieve de AWS y un servicio de datos de órbita, con una copia de respaldo en el repo. Ninguno de esos datos entra al contrato.
+El navegador consulta NASA FIRMS (a través de un archivo guardado con la web), el servidor de focos GOES-19 del INPE, Open-Meteo, dolarapi.com, el nodo público de la red de prueba de Stellar, las imágenes satelitales de Esri, el relieve de AWS y un servicio de datos de órbita, con una copia de respaldo en el repo. Ninguno de esos datos entra al contrato.
 
 ## Límites de esta etapa
 

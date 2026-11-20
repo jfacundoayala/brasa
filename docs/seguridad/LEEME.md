@@ -34,7 +34,7 @@ Cada fila es un hallazgo de una revisión, su arreglo y el test que lo comprueba
 | Un destinatario nuevo podía cobrar apenas se lo daba de alta | Demora pública antes de poder cobrar | "un carnet nuevo no cobra hasta pasada la demora (anti-autocredencial)" |
 | Un reporte que no liberaba nada gastaba la espera entre pagos | Ya no la gasta | "un reporte que libera 0 no arranca el cooldown" |
 | Una observación anterior podía volver a contarse | Se rechaza | "no se vuelve a contar una observación anterior a la última liberación" |
-| Una billetera bloqueada frenaba el pago de todos | El resto cobra. Esa parte vuelve al fondo | "un pago que falla (wallet bloqueada) no frena al resto y el dinero vuelve al fondo" |
+| Una billetera bloqueada frenaba el pago de todos | El resto cobra. Esa parte vuelve al fondo | "un pago que falla (billetera bloqueada) no frena al resto y el dinero vuelve al fondo" |
 | Las bajas ocupaban lugar en la lista de destinatarios | La baja libera el lugar | "revocar libera el lugar en la lista (el tope de 25 no se llena con bajas)" |
 | Una zona podía crearse con valores extremos | Cotas al crear la zona | "createZone pone cotas de cordura (cooldown y costos)" |
 | Un token que cobra al transferir descuadraba el saldo | Se acredita lo que llegó de verdad | "con un token que cobra al transferir, la zona acredita lo que llegó de verdad" |
