@@ -37,7 +37,7 @@ const archivoDespliegue = process.env.DEPLOYMENT_FILE ?? resolve(raiz, "web", "p
 const RPC_FUJI = "https://api.avax-test.network/ext/bc/C/rpc";
 // La ABI completa sale del contrato compilado; se lee solo cuando hace falta (verificar-hash no la necesita).
 const abiFondo = () =>
-  JSON.parse(readFileSync(resolve(raiz, "contracts", "artifacts", "contracts", "BrasaFund.sol", "BrasaFund.json"), "utf8")).abi;
+  JSON.parse(readFileSync(resolve(raiz, "avalanche", "artifacts", "contracts", "BrasaFund.sol", "BrasaFund.json"), "utf8")).abi;
 
 const args = process.argv.slice(2);
 const orden = args[0];
@@ -253,7 +253,7 @@ async function enviarReporte({ dep, provider, fondo, firmas, hotspots, pk, datos
     const [asignados, hasta] = await fondo.responders(dep.zoneId);
     const ahora = (await provider.getBlock("latest")).timestamp;
     if (asignados.length === 0 || Number(hasta) < ahora) {
-      throw new Error("La federación todavía no asignó cuarteles a este incendio (o la asignación venció). No envío: el contrato lo rechazaría. Ver contracts/scripts/asignar.mjs.");
+      throw new Error("La federación todavía no asignó cuarteles a este incendio (o la asignación venció). No envío: el contrato lo rechazaría. Ver avalanche/scripts/asignar.mjs.");
     }
   }
 

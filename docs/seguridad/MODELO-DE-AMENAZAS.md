@@ -8,12 +8,12 @@ Hoy corre en la red de prueba de Stellar, con USDC de prueba.
 
 | Parte | Código | Qué hace |
 |---|---|---|
-| Contrato | `contracts/contracts/BrasaFund.sol` | Guarda el fondo, verifica las firmas y libera el dinero. No tiene función de retiro |
+| Contrato | `avalanche/contracts/BrasaFund.sol` | Guarda el fondo, verifica las firmas y libera el dinero. No tiene función de retiro |
 | Oráculo | `relayer/src/` | Baja los focos de NASA FIRMS, cruza los dos satélites, calcula la huella y firma los reportes |
 | Buzón de firmas | `relayer/src/buzon.mjs` | Cada firmante publica su firma y quien envía junta el par |
 | Web | `web/` | Mapa público y donación desde la billetera del visitante. Está alojada en Vercel |
-| Scripts | `contracts/scripts/` | Despliegue, alta de la federación y asignación de cuarteles |
-| CI | `.github/workflows/`, `.githooks/` | Tests y búsqueda de claves en cada cambio; actualización de los focos del mapa |
+| Scripts | `avalanche/scripts/` | Despliegue, alta de la federación y asignación de cuarteles |
+| Hook local | `.githooks/` | Frena un commit que tenga una clave privada |
 
 ## Quién puede hacer qué
 

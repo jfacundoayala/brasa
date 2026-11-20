@@ -2,7 +2,7 @@
 <!-- Una o dos líneas. -->
 
 ## Cómo lo probé
-- [ ] `cd contracts && npx hardhat test`
+- [ ] `cd avalanche && npx hardhat test`
 - [ ] `cd relayer && npm test`
 - [ ] `cd web && npx tsc --noEmit && npm run build`
 - [ ] `node .github/revisar-enlaces.mjs`
@@ -10,4 +10,4 @@
 
 ## Seguridad
 - [ ] Sin claves, `.env` ni billeteras en el diff (`git diff --cached`)
-- [ ] Si toca `contracts/contracts/`, lo revisa Gastón
+- [ ] Si toca `avalanche/contracts/`, lo revisa Gastón

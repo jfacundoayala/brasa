@@ -1,5 +1,5 @@
 # Relayer en Oracle Cloud (VM Always Free)
-> Resumen. La guía completa, paso a paso, está en [`../docs/futuro/ORACLE-PASO-A-PASO.md`](../../docs/futuro/ORACLE-PASO-A-PASO.md). La VM solo baja datos y sirve la web; las claves de oráculo no van ahí.
+> Resumen. La guía completa, paso a paso, está en [`../docs/tecnico/ORACLE-PASO-A-PASO.md`](../../docs/tecnico/ORACLE-PASO-A-PASO.md). La VM solo baja datos y sirve la web; las claves de oráculo no van ahí.
 
 > Propuesta para el piloto. Todo es testnet.
 
@@ -14,7 +14,7 @@ sudo apt update && sudo apt install -y git curl
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
 git clone https://github.com/jfacundoayala/brasa.git brasa && cd brasa/relayer && npm ci
 ```
-El relayer usa `contracts/artifacts/.../BrasaFund.json` (el ABI). En la VM corré antes `cd contracts && npm ci && npx hardhat compile`, o copiá solo ese JSON.
+El relayer usa `avalanche/artifacts/.../BrasaFund.json` (el ABI). En la VM corré antes `cd avalanche && npm ci && npx hardhat compile`, o copiá solo ese JSON.
 
 ## 3. Variables (no van al repo)
 Archivo `/home/ubuntu/relayer.env` con permisos `600`:

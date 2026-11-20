@@ -66,8 +66,8 @@ function chequeos() {
   if (gh(["api", `repos/${repo}`, "--jq", ".full_name"]).status !== 0)
     throw new Error(`El CLI gh no puede leer ${repo}: corré \`gh auth login\` con una cuenta que tenga acceso al repo.`);
   // El relayer lee la ABI del contrato compilado: se compila para que no quede vieja.
-  const c = corre("npx hardhat compile", [], { cwd: resolve(raiz, "contracts"), shell: true });
-  if (c.status !== 0) throw new Error("No pude compilar el contrato (cd contracts && npx hardhat compile).");
+  const c = corre("npx hardhat compile", [], { cwd: resolve(raiz, "avalanche"), shell: true });
+  if (c.status !== 0) throw new Error("No pude compilar el contrato (cd avalanche && npx hardhat compile).");
 }
 
 /** Firma con este oráculo. Devuelve el objeto de la firma o null si el relayer se negó (por ejemplo, menos de 2 focos). */

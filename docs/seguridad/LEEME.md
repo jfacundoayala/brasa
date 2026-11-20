@@ -27,7 +27,7 @@ Las medidas de seguridad y cómo avisar de un problema están en [`../../SECURIT
 
 ## Qué se corrigió
 
-Cada fila es un hallazgo de una revisión, su arreglo y el test que lo comprueba (`contracts/test/BrasaFund.ts`).
+Cada fila es un hallazgo de una revisión, su arreglo y el test que lo comprueba (`avalanche/test/BrasaFund.ts`).
 
 | Hallazgo | Arreglo | Test |
 |---|---|---|

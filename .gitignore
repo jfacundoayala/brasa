@@ -23,7 +23,7 @@ web/public/ultimo-reporte.json
 
 # generado por el deploy / tipos generados
 web/public/deployment.json
-contracts/types/
+avalanche/types/
 
 # Firmas de oraculo y despliegue local (no se suben)
 firma-oraculo*.json

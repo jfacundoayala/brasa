@@ -1,9 +1,9 @@
 // La federación asigna qué cuarteles combaten el incendio de la zona (contrato v3).
 // Solo los asignados cobran la parte de combate. Sin asignación vigente, el contrato no libera nada.
 //
-//   cd contracts && node --env-file=../.env.local scripts/asignar.mjs cuartel-a,cuartel-b [días]
-//   cd contracts && node --env-file=../.env.local scripts/asignar.mjs --borrar
-//   cd contracts && node scripts/asignar.mjs --ver            (solo lee, no necesita claves)
+//   cd avalanche && node --env-file=../.env.local scripts/asignar.mjs cuartel-a,cuartel-b [días]
+//   cd avalanche && node --env-file=../.env.local scripts/asignar.mjs --borrar
+//   cd avalanche && node scripts/asignar.mjs --ver            (solo lee, no necesita claves)
 //
 // Usa FEDERATION_PRIVATE_KEY (nunca se imprime). Lee el contrato de web/public/deployment.fuji-v3.json
 // (o de DEPLOYMENT_FILE). El máximo del contrato es 30 días.

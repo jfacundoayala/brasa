@@ -3,7 +3,7 @@
 # Cambian solo el deployer y la federación (otra wallet, creada con crear-federacion.mjs).
 # Las claves se leen de .env.local (no va a git) y nunca se imprimen.
 #
-#   cd contracts && bash scripts/desplegar-v3-fuji.sh
+#   cd avalanche && bash scripts/desplegar-v3-fuji.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 set -a && . ../.env.local && set +a

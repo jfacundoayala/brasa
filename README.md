@@ -136,8 +136,8 @@ web/         Next.js + MapLibre + React Three Fiber + Stellar Wallets Kit
   lib/         stellar.ts (lectura del contrato y donación), formula.ts (meta por incendio),
                goes.ts (avisos GOES-19), cuarteles.ts, zonas.ts, orbita.ts
 docs/        producto, técnico, seguridad, legal, presentación e identidad
-contracts/   la primera versión del contrato, en Solidity (ver abajo)
-.github/     tests y búsqueda de claves en cada cambio; actualización de datos de la NASA
+avalanche/   la primera versión del contrato, en Solidity (ver abajo)
+.github/     plantilla de pull request y el revisor de enlaces
 ```
 
 ## Límites
@@ -151,7 +151,7 @@ contracts/   la primera versión del contrato, en Solidity (ver abajo)
 
 ## Primera versión
 
-La primera versión del contrato se escribió en Solidity y se probó en Avalanche Fuji durante el hackathon. Con ella se hizo, el 12/11/2026, un pago con datos reales del día: los dos satélites confirmaron 10 focos y el fondo pagó en una transacción a dos cuarteles y a la asistencia. El código sigue en [`contracts/`](contracts/), con sus 116 tests, y las direcciones y transacciones en [`DIRECCIONES.md`](docs/tecnico/DIRECCIONES.md). El [video](https://youtu.be/Kv2nUGe9D3A) muestra esa versión.
+La primera versión del contrato se escribió en Solidity y se probó en Avalanche Fuji durante el hackathon. Con ella se hizo, el 12/11/2026, un pago con datos reales del día: los dos satélites confirmaron 10 focos y el fondo pagó en una transacción a dos cuarteles y a la asistencia. El código sigue en [`avalanche/`](avalanche/), con sus 116 tests, y las direcciones y transacciones en [`DIRECCIONES.md`](docs/tecnico/DIRECCIONES.md). El [video](https://youtu.be/Kv2nUGe9D3A) muestra esa versión.
 
 ## Estado a noviembre de 2026
 

@@ -1,4 +1,4 @@
-// ABI de BrasaFund v3. GENERADO por web/scripts/generar-abi.mjs desde contracts/artifacts: no editar a mano.
+// ABI de BrasaFund v3. GENERADO por web/scripts/generar-abi.mjs desde avalanche/artifacts: no editar a mano.
 export const FUND_ABI = [
  {
   "inputs": [],
