@@ -13,7 +13,7 @@
 - **Comisión con tope fijo:** `MAX_FEE_BPS = 500` (5 %), fija al desplegar.
 - **Contrato:** parámetros de zona que no se pueden editar; topes fijos para demoras, costos y pagos por incendio; las propuestas de cambio vencen solas. 32 tests. Oráculo: 63 tests.
 - **Capas de detección:** el oráculo descarta fuentes fijas, focos sobre cultivos, focos sueltos y lo que no se ve en dos días distintos, antes de contar.
-- **Claves fuera del repo:** `.gitignore` excluye `.env*`, claves y firmas. Un hook local (`.githooks/pre-commit`) y el CI (`.github/workflows/tests.yml`) buscan claves privadas en cada cambio. Ninguna clave de oráculo vive en un servidor ni en el CI.
+- **Claves fuera del repo:** `.gitignore` excluye `.env*`, claves y firmas. Un hook local (`.githooks/pre-commit`) frena cualquier commit que tenga una clave privada. Ninguna clave de oráculo vive en un servidor.
 - **Dependencias con versión exacta** y lockfiles en `stellar/`, `relayer/` y `web/`.
 
 Qué se revisó y qué se corrigió en el contrato: [`docs/seguridad/LEEME.md`](docs/seguridad/LEEME.md). Qué frena cada ataque: [`docs/seguridad/MODELO-DE-AMENAZAS.md`](docs/seguridad/MODELO-DE-AMENAZAS.md).
@@ -28,7 +28,7 @@ Qué se revisó y qué se corrigió en el contrato: [`docs/seguridad/LEEME.md`](
 | Cualquiera recalcula la huella de los datos de cada pago | Red de oráculos de varios operadores independientes |
 | Dos satélites de la NASA: VIIRS NOAA-20 y NOAA-21 | Un segundo proveedor de datos satelitales |
 | Seis capas de detección: alta confianza, fuentes fijas, uso del suelo, agrupación, dos satélites y persistencia | Control posterior con imágenes de 10 m y registro de quemas autorizadas |
-| 32 tests del contrato, 63 del oráculo y búsqueda de claves en cada cambio | Auditoría externa, fuzzing y análisis estático en el CI |
+| 32 tests del contrato, 63 del oráculo y un hook que frena claves privadas | Auditoría externa, fuzzing y análisis estático |
 
 Plan completo: [`docs/producto/roadmap.md`](docs/producto/roadmap.md).
 
