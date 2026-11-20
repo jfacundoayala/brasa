@@ -1,7 +1,7 @@
 // Genera billeteras DESCARTABLES de testnet y las guarda en ../.env.local (que git ignora).
 // Imprime solo las direcciones públicas. Nunca imprime ni sube las claves privadas. No pisa un .env.local existente.
 //
-//   cd contracts && node scripts/generar-wallets.mjs [oraculo0|oraculo1|todas]
+//   cd avalanche && node scripts/generar-wallets.mjs [oraculo0|oraculo1|todas]
 //
 // Cada persona corre esto en SU máquina: no se comparten claves. Facundo opera el oráculo 0 y Gastón el oráculo 1.
 import { Wallet } from "ethers";

@@ -83,11 +83,11 @@ Son 154 tests: 116 del contrato y 38 del oráculo.
 Ver quién está asignado (no necesita claves):
 
 ```bash
-cd contracts && node scripts/asignar.mjs --ver
+cd avalanche && node scripts/asignar.mjs --ver
 ```
 
 Asignar cuarteles por 7 días:
 
 ```bash
-cd contracts && node --env-file=../.env.local scripts/asignar.mjs cuartel-a,cuartel-b 7
+cd avalanche && node --env-file=../.env.local scripts/asignar.mjs cuartel-a,cuartel-b 7
 ```

@@ -1,6 +1,6 @@
 // Genera web/lib/abi.ts desde el contrato compilado, para no copiar el ABI a mano.
 //
-//   cd contracts && npx hardhat compile && cd ../web && node scripts/generar-abi.mjs
+//   cd avalanche && npx hardhat compile && cd ../web && node scripts/generar-abi.mjs
 //
 // FUND_ABI es el del contrato actual (v3). V1_ZONES_ABI y V2_ZONES_ABI permiten seguir leyendo los contratos anteriores.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -8,10 +8,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const aqui = dirname(fileURLToPath(import.meta.url));
-const artefacto = resolve(aqui, "..", "..", "contracts", "artifacts", "contracts", "BrasaFund.sol", "BrasaFund.json");
+const artefacto = resolve(aqui, "..", "..", "avalanche", "artifacts", "contracts", "BrasaFund.sol", "BrasaFund.json");
 const abi = JSON.parse(readFileSync(artefacto, "utf8")).abi.filter((x) => x.type !== "constructor");
 
-const salida = `// ABI de BrasaFund v3. GENERADO por web/scripts/generar-abi.mjs desde contracts/artifacts: no editar a mano.
+const salida = `// ABI de BrasaFund v3. GENERADO por web/scripts/generar-abi.mjs desde avalanche/artifacts: no editar a mano.
 export const FUND_ABI = ${JSON.stringify(abi, null, 1)} as const;
 
 // Contrato v1 (anterior): solo lo que cambió de forma, para poder seguir leyéndolo.
