@@ -1,10 +1,14 @@
-import { BrowserProvider, Contract, JsonRpcProvider, formatUnits, parseUnits } from "ethers";
-import type { Eip1193Provider } from "ethers";
-import { ERC20_ABI, FUND_ABI, V1_ZONES_ABI, V2_ZONES_ABI } from "./abi";
+// La librería de la red anterior (ethers) vive en evm.ts y se carga recién si el despliegue no es de Stellar.
+/** Una billetera del navegador (EIP-1193). */
+export type Eip1193Provider = { request(a: { method: string; params?: unknown[] | Record<string, unknown> }): Promise<unknown> };
+import { addrUrlStellar, errorStellar, explorerStellar, txUrlStellar } from "./stellar";
 
 export type Deployment = {
-  network: "local" | "fuji";
+  network: "local" | "fuji" | "stellar-testnet";
+  /** En Stellar no hay número de red: se usa STELLAR_ID para que el resto de la web no cambie. */
   chainId: number;
+  /** Solo Stellar: la frase que identifica la red. */
+  passphrase?: string;
   rpc: string;
   explorer: string;
   fund: string;
@@ -25,10 +29,14 @@ export type Deployment = {
   costPerHa?: string | number;
 };
 
+/** El despliegue es el contrato de Stellar. Tiene todo lo del v3. */
+export const STELLAR_ID = -1;
+export const esStellar = (d: Deployment) => d.network === "stellar-testnet";
+
 /** v2 o posterior (totales, polígono, hora del dato). */
-export const esV2 = (d: Deployment) => (d.version ?? 1) >= 2;
+export const esV2 = (d: Deployment) => esStellar(d) || (d.version ?? 1) >= 2;
 /** v3 o posterior (cuarteles asignados a cada incendio). */
-export const esV3 = (d: Deployment) => (d.version ?? 1) >= 3;
+export const esV3 = (d: Deployment) => esStellar(d) || (d.version ?? 1) >= 3;
 
 export type Sensor = "noaa20" | "noaa21" | "modis";
 export type Focos = {
@@ -88,21 +96,29 @@ export const FUJI_EXPLORER = "https://explorer-test.avax.network/c-chain";
 export const FUJI_RPC = "https://api.avax-test.network/ext/bc/C/rpc";
 
 export const USDC_DECIMALS = 6;
-export const fmtUsdc = (v: bigint) =>
-  Number(formatUnits(v, USDC_DECIMALS)).toLocaleString("es-AR", { maximumFractionDigits: 2 });
-export const parseUsdc = (s: string) => parseUnits(s, USDC_DECIMALS);
+export const fmtUsdc = (v: bigint) => (Number(v) / 10 ** USDC_DECIMALS).toLocaleString("es-AR", { maximumFractionDigits: 2 });
+/** Texto ("12.5") a unidades de USDC. Si no es un número con hasta 6 decimales, lanza un error. */
+export function parseUsdc(s: string): bigint {
+  const m = /^(\d*)(?:\.(\d{0,6}))?$/.exec(s.trim());
+  if (!m || (!m[1] && !m[2])) throw new Error("Monto inválido");
+  return BigInt(m[1] || "0") * 10n ** BigInt(USDC_DECIMALS) + BigInt((m[2] ?? "").padEnd(USDC_DECIMALS, "0"));
+}
 
 export function explorerBase(d: Deployment): string {
+  if (esStellar(d)) return explorerStellar(d);
   if (d.chainId === FUJI_ID) return d.explorer || FUJI_EXPLORER;
   return d.explorer || "";
 }
-export const txUrl = (d: Deployment, h: string) => (explorerBase(d) ? `${explorerBase(d)}/tx/${h}` : "");
-export const addrUrl = (d: Deployment, a: string) => (explorerBase(d) ? `${explorerBase(d)}/address/${a}` : "");
+export const txUrl = (d: Deployment, h: string) => (esStellar(d) ? txUrlStellar(d, h) : explorerBase(d) ? `${explorerBase(d)}/tx/${h}` : "");
+export const addrUrl = (d: Deployment, a: string) =>
+  esStellar(d) ? addrUrlStellar(d, a) : explorerBase(d) ? `${explorerBase(d)}/address/${a}` : "";
 
 // Billeteras que la web ofrece por nombre. Core es la de Avalanche y va primero.
-export type Billetera = { id: "core" | "metamask" | "otra"; nombre: string; provider: Eip1193Provider };
+export type Billetera = { id: "core" | "metamask" | "otra" | "stellar"; nombre: string; provider: Eip1193Provider };
 const RDNS: Record<string, Billetera["id"]> = { "app.core.extension": "core", "io.metamask": "metamask" };
-const NOMBRE = { core: "Core", metamask: "MetaMask", otra: "mi billetera" } as const;
+const NOMBRE = { core: "Core", metamask: "MetaMask", otra: "mi billetera", stellar: "mi billetera de Stellar" } as const;
+/** En Stellar la billetera se elige en la ventana del kit: la web muestra un solo botón. */
+export const BILLETERA_STELLAR = { id: "stellar", nombre: NOMBRE.stellar } as const;
 type Anuncio = { info: { rdns: string; name: string }; provider: Eip1193Provider };
 const anunciadas = new Map<Billetera["id"], Eip1193Provider>();
 let escuchando = false;
@@ -169,8 +185,6 @@ export async function switchTo(d: Deployment) {
     });
   }
 }
-
-export const readProvider = (d: Deployment) => new JsonRpcProvider(d.rpc, d.chainId, { staticNetwork: true });
 
 /** bytes32 con texto ASCII ("cafayate") -> texto; si no es texto, 0x1234...abcd. */
 export function bytes32Label(id: string): string {
@@ -240,142 +254,21 @@ export function nivel(n: number): "bajo" | "medio" | "alto" | "crítico" {
 }
 
 export async function loadZone(d: Deployment, hotspots: number): Promise<ZoneData> {
-  const p = readProvider(d);
-  const c = new Contract(d.fund, FUND_ABI, p);
-  // El v1 tiene otra forma de zones(): se lee con su propio fragmento. Los campos se leen por nombre, no por posición.
-  // El v3 agregó un campo al final de zones(), así que el v2 también usa su propio fragmento.
-  const zonas = esV3(d) ? c : new Contract(d.fund, esV2(d) ? V2_ZONES_ABI : V1_ZONES_ABI, p);
-  const [prev, z, balance, stations, assist, totales] = await Promise.all([
-    c.getFunction("previewTarget")(d.zoneId, BigInt(hotspots)),
-    zonas.getFunction("zones")(d.zoneId),
-    c.getFunction("zoneBalance")(d.zoneId),
-    c.getFunction("stationIds")(d.zoneId),
-    c.getFunction("assistanceIds")(d.zoneId),
-    esV2(d) ? c.getFunction("zoneTotals")(d.zoneId) : Promise.resolve(null),
-  ]);
-  // Lecturas extra: si fallan, la zona se muestra igual.
-  const [resp, minDon] = await Promise.all([
-    esV3(d)
-      ? c.getFunction("responders")(d.zoneId).then(
-          (r) => ({ ids: [...(r[0] as string[])], hasta: Number(r[1] as bigint) }),
-          () => null,
-        )
-      : Promise.resolve(null),
-    esV2(d) ? c.getFunction("minDonation")().then((v) => v as bigint, () => null) : Promise.resolve(null),
-  ]);
-  const areaHa = prev[0] as bigint;
-  const ids: { id: string; kind: "station" | "assistance" }[] = [
-    ...(stations as string[]).map((id) => ({ id, kind: "station" as const })),
-    ...(assist as string[]).map((id) => ({ id, kind: "assistance" as const })),
-  ];
-  const recipients = await Promise.all(
-    ids.map(async ({ id, kind }) => {
-      const r = await c.getFunction("recipients")(id);
-      return {
-        id,
-        label: bytes32Label(id),
-        wallet: r.wallet as string,
-        kind,
-        active: r.active as boolean,
-        activeFrom: Number(r.activeFrom as bigint),
-      };
-    }),
-  );
-
-  // Un movimiento del contrato, venga del RPC o del explorador.
-  type Crudo = { nombre: string; args: Record<string, unknown>; tx: string; bloque: number };
-  const aEvento = (l: Crudo): EventoLog => {
-    const a = l.args;
-    const tipo = l.nombre as EventoLog["tipo"];
-    const donante = String(a.donor ?? "");
-    const texto =
-      tipo === "FireEvent"
-        ? `Evento #${a.eventId}: ${a.hotspots} ${a.hotspots === 1n ? "foco" : "focos"}, liberó ${fmtUsdc(a.released as bigint)} USDC`
-        : tipo === "Released"
-          ? `Evento #${a.eventId}: ${fmtUsdc(a.amount as bigint)} USDC a ${bytes32Label(a.recipientId as string)}`
-          : `Donación: ${fmtUsdc(a.net as bigint)} USDC al fondo (de ${donante.slice(0, 6)}…${donante.slice(-4)})`;
-    return { tipo, texto, tx: l.tx, bloque: l.bloque };
-  };
-  let crudos: Crudo[] = [];
-  try {
-    const latest = await p.getBlockNumber();
-    const from = Math.max(0, latest - 2000);
-    const [fires, rels, dons] = await Promise.all([
-      c.queryFilter(c.filters.FireEvent(d.zoneId), from),
-      c.queryFilter(c.filters.Released(d.zoneId), from),
-      c.queryFilter(c.filters.Donated(d.zoneId), from), // donaciones al fondo de la zona
-    ]);
-    crudos = [...fires, ...rels, ...dons].map((l) => {
-      const el = l as unknown as { args: Record<string, unknown>; fragment: { name: string } };
-      return { nombre: el.fragment.name, args: el.args, tx: l.transactionHash, bloque: l.blockNumber };
-    });
-  } catch {
-    // El RPC público de Fuji limita el rango de logs. En ese caso se leen del explorador, que los tiene indexados.
-    try {
-      if (d.chainId === FUJI_ID) {
-        const url = `https://api.routescan.io/v2/network/testnet/evm/${FUJI_ID}/etherscan/api?module=logs&action=getLogs&address=${d.fund}&fromBlock=${d.deployBlock ?? 0}&toBlock=latest`;
-        const j = (await (await fetch(url)).json()) as {
-          result?: { topics: string[]; data: string; transactionHash: string; blockNumber: string }[];
-        };
-        for (const l of Array.isArray(j.result) ? j.result : []) {
-          const pl = c.interface.parseLog({ topics: l.topics, data: l.data });
-          if (!pl || !["FireEvent", "Released", "Donated"].includes(pl.name)) continue;
-          if (String(l.topics[1]).toLowerCase() !== String(d.zoneId).toLowerCase()) continue; // solo la zona que se muestra
-          crudos.push({
-            nombre: pl.name,
-            args: pl.args as unknown as Record<string, unknown>,
-            tx: l.transactionHash,
-            bloque: Number(l.blockNumber),
-          });
-        }
-      }
-    } catch {
-      crudos = []; // sin historial la web sigue andando: los totales salen del contrato
-    }
-  }
-  const eventos: EventoLog[] = crudos
-    .map(aEvento)
-    .sort((x, y) => y.bloque - x.bloque)
-    .slice(0, 6);
-
-  return {
-    areaHa,
-    target: prev[1] as bigint,
-    combate: areaHa * (z.costCombatPerHa as bigint),
-    logistica: areaHa * (z.costLogisticsPerHa as bigint),
-    asistencia: areaHa * (z.costAssistPerHa as bigint),
-    maxPerEvent: z.maxPerEvent as bigint,
-    costoHa: (z.costCombatPerHa as bigint) + (z.costLogisticsPerHa as bigint) + (z.costAssistPerHa as bigint),
-    costosHa: {
-      combate: z.costCombatPerHa as bigint,
-      logistica: z.costLogisticsPerHa as bigint,
-      asistencia: z.costAssistPerHa as bigint,
-    },
-    balance: balance as bigint,
-    totalDonated: totales ? (totales[0] as bigint) : null,
-    totalReleased: totales ? (totales[1] as bigint) : null,
-    hotspots,
-    minHotspots: Number(z.minHotspots),
-    recipients,
-    responders: resp?.ids ?? [],
-    respondersUntil: resp?.hasta ?? 0,
-    minDonation: minDon,
-    eventos,
-  };
+  if (esStellar(d)) return (await import("./stellar")).loadZoneStellar(d, hotspots);
+  return (await import("./evm")).loadZoneEvm(d, hotspots);
 }
 
 export type Reparto = { net: bigint; fee: bigint; total: bigint };
 
 /** Cómo reparte el contrato un aporte. coverFee=false: la comisión sale del monto; true: se suma. */
 export async function quoteSplit(d: Deployment, amount: bigint, coverFee: boolean): Promise<Reparto> {
-  const c = new Contract(d.fund, FUND_ABI, readProvider(d));
-  const [net, fee, total] = (await c.getFunction("quoteSplit")(amount, coverFee)) as [bigint, bigint, bigint];
-  return { net, fee, total };
+  if (esStellar(d)) return (await import("./stellar")).quoteSplitStellar(d, amount, coverFee);
+  return (await import("./evm")).quoteSplitEvm(d, amount, coverFee);
 }
 
 export async function usdcBalance(d: Deployment, who: string): Promise<bigint> {
-  const u = new Contract(d.usdc, ERC20_ABI, readProvider(d));
-  return (await u.getFunction("balanceOf")(who)) as bigint;
+  if (esStellar(d)) return (await import("./stellar")).usdcBalanceStellar(d, who);
+  return (await import("./evm")).usdcBalanceEvm(d, who);
 }
 
 /** approve(total) y donateToZone(monto, coverFee). Avisa cada paso con onStep. */
@@ -386,23 +279,8 @@ export async function donar(
   total: bigint,
   onStep: (s: { paso: "approve" | "donar"; hash: string }) => void,
 ): Promise<string> {
-  const eth = getEth();
-  if (!eth) throw new Error("No hay billetera");
-  const signer = await new BrowserProvider(eth).getSigner();
-  const who = await signer.getAddress();
-  const usdc = new Contract(d.usdc, ERC20_ABI, signer);
-  const need = total;
-  const have = (await usdc.getFunction("allowance")(who, d.fund)) as bigint;
-  if (have < need) {
-    const tx = await usdc.getFunction("approve")(d.fund, need);
-    onStep({ paso: "approve", hash: tx.hash });
-    await tx.wait();
-  }
-  const fund = new Contract(d.fund, FUND_ABI, signer);
-  const tx = await fund.getFunction("donateToZone")(d.zoneId, amount, coverFee);
-  onStep({ paso: "donar", hash: tx.hash });
-  await tx.wait();
-  return tx.hash as string;
+  if (esStellar(d)) return (await import("./stellar")).donarStellar(d, amount, coverFee, onStep);
+  return (await import("./evm")).donarEvm(d, amount, coverFee, total, onStep);
 }
 
 /** Errores propios del contrato, en castellano. */
@@ -428,6 +306,8 @@ export function errorCorto(e: unknown): string {
   const interno = x.info?.error ?? x.error;
   const texto = [x.shortMessage, x.message, x.reason, interno?.message].filter(Boolean).join(" ");
   const bajo = texto.toLowerCase();
+  const deStellar = errorStellar(texto);
+  if (deStellar) return deStellar;
   if (x.code === "ACTION_REJECTED" || x.code === 4001 || interno?.code === 4001 || bajo.includes("user rejected") || bajo.includes("user denied"))
     return "Cancelaste la operación en la billetera.";
   // Error con nombre del contrato: ethers lo decodifica en revert.name; si no, se busca el nombre en el texto.

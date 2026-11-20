@@ -1,4 +1,26 @@
-# Direcciones y transacciones (Avalanche Fuji, red de prueba)
+# Direcciones y transacciones
+
+## Stellar (red de prueba): versión vigente
+
+> **Fuente de verdad:** la cadena. Los valores se leyeron del contrato el 19/11/2026 (`config`, `zone`).
+
+| Qué | Valor |
+|---|---|
+| Contrato `brasa-fund` | [`CAE23TYOONXIZEHOYY4GZARITWVOFQBENRWHK7MCFM4Q7NRUJSVGVQR6`](https://stellar.expert/explorer/testnet/contract/CAE23TYOONXIZEHOYY4GZARITWVOFQBENRWHK7MCFM4Q7NRUJSVGVQR6) |
+| USDC de prueba (emitido por el equipo, sin valor) | [`CAHM3B3MQMPOQLD6IC4UH77AGEVSXQEQCHHGM3SL2J2DJXCEFIRTESO3`](https://stellar.expert/explorer/testnet/contract/CAHM3B3MQMPOQLD6IC4UH77AGEVSXQEQCHHGM3SL2J2DJXCEFIRTESO3) |
+| Federación | `GCBB27NIZY2M2VRMKFJIGFBHWYQMQ73BVKIQ2VOPKDLVAU36VLE337GL` |
+| Tesorería (cobra la comisión) | `GDWYXQJYVZKW6425D54FURQP6A67B3CHORRRXJ5UYXEY3R343B3WLXZ5` |
+| Oráculo del satélite NOAA-20 | `GBDNND5J2OPIFHQT6RHH5L3EBZ7KA6WJDAABM53TIKATDXY4LRHZV6KF` |
+| Oráculo del satélite NOAA-21 | `GA3LGHTBATEO5ZPNUIUBPF7UYEQXKIN7FZ6PODL7WF2O3HLX5TOCOQRQ` |
+| Zona `salta` | `c48e22d109fbdc9ea9d09115591b16133717abf8f0faad86b3656f23f0a8de5b` |
+| Comisión y donación mínima | 5 % · 1 USDC |
+| Reglas de la zona de prueba | Mínimo 3 focos · 4 USDC por hectárea (2 combate, 1 logística, 1 asistencia) · tope de 500 USDC por incendio · 1 hora entre pagos |
+| Demoras | 1 hora para un alta y 1 hora para cambiar un oráculo. En el piloto: 72 h y 48 h |
+| Pago de punta a punta, 19/11/2026 | [`9789094c…d532`](https://stellar.expert/explorer/testnet/tx/9789094c217e84c3aeb28836751057e77f98bc36a7056af1fd72b3fc445dd532): 280 USDC, 210 al cuartel y 70 a la asistencia. Focos cargados a mano |
+
+Todas las cuentas las opera el equipo y son de prueba.
+
+## Primera versión (Avalanche Fuji, red de prueba)
 
 > **Fuente de verdad:** `web/public/deployment.fuji.json`. La web y el relayer leen ese archivo. Los roles de esta tabla se leyeron del contrato el 13/11/2026 (`oracle0()`, `oracle1()`, `treasury()`, `federation()`, `feeBps()`).
 > Si este documento y la cadena no coinciden, vale la cadena.

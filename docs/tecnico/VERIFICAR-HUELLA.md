@@ -1,5 +1,7 @@
 # Verificar la huella del dato
 
+> **Primera versión.** Este documento describe el contrato en Solidity que se usó durante el hackathon. La versión vigente corre en Stellar: ver [`stellar/README.md`](../../stellar/README.md).
+
 > Cómo cualquiera comprueba que un pago se hizo con los datos reales de la NASA.
 
 Responde la pregunta del track "¿qué pasa si el dato miente?" con algo que cualquiera puede correr: **cualquiera recalcula la huella de un reporte y la compara con la que quedó en la cadena**, sin claves y sin confiar en nuestro relayer.

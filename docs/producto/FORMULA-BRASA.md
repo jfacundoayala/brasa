@@ -26,7 +26,7 @@ TOTAL       = Combate + Avión + Vecinos
 combate 210 × 400 × 1,8 × 1,2 = 181.440; avión 6 h × 4.000 = 24.000; vecinos 6 viviendas = 3.060. **Total ≈ 208.500 USDC.**
 
 **Cómo se usa:** la fórmula muestra al donante cuánto hace falta en cada incendio. Hoy: el contrato libera con la regla
-pública de la zona (focos confirmados × 14 ha × 400 USDC). Paso siguiente: que el oráculo firme el monto de la fórmula.
+pública de la zona (focos confirmados × 14 ha × 400 USDC). Paso siguiente: que el oráculo reporte el monto de la fórmula.
 Los factores se calibran con los costos reales de los cuarteles (combustible, viáticos, equipos).
 
 ### Capa 1: calibración con grandes incendios
@@ -62,14 +62,14 @@ Superficie (focos × 14 ha), fuerza del fuego (FRP), clima (30-30-30 y lluvia), 
 - **Por qué no mueve fondos:** el píxel de GOES es grande (unos 2 km). Sirve para avisar rápido. Los fondos se mueven
   solo cuando los dos VIIRS de la NASA confirman.
 
-**GOES avisa en minutos, la NASA confirma en horas, Avalanche libera en segundos.**
+**GOES avisa en minutos, la NASA confirma en horas, Stellar libera en segundos.**
 
 ## 3. Hacia dónde avanza
 
 Con la dirección del viento de Open-Meteo, la tarjeta dice hacia dónde lo empuja el viento (por ejemplo "hacia el suroeste a
 11 km/h"). Es una guía simple: el relieve y el combustible también cuentan.
 
-## 4. Referencias en AVAX y en $
+## 4. Referencia en $
 
-Los montos se muestran en USDC y, como referencia, en AVAX (precio de CoinGecko) y en $ (dólar oficial de venta de DolarApi).
+Los montos se muestran en USDC y, como referencia, en $ (dólar oficial de venta de DolarApi).
 Al fondo siempre llega USDC.

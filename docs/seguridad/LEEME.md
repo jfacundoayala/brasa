@@ -1,12 +1,25 @@
 # Revisiones del contrato
 
+## Contrato de Stellar
+
+Antes de publicarlo en la red de prueba se revisó con las guías de seguridad para contratos de Stellar. Se corrigieron cuatro defectos, cada uno con su test:
+
+- Un traspaso de federación propuesto quedaba abierto para siempre. Ahora vence a los 7 días.
+- Una propuesta vencida para un oráculo podía trabar el cambio del otro. Ahora se limpia sola.
+- Las demoras se podían fijar en cero. Ahora tienen un mínimo de 1 hora.
+- Una zona se podía crear sin tope por incendio. Ahora el tope es obligatorio.
+
+Tests: 32 del contrato y 63 del oráculo.
+
+Lo que sigue en este documento es la historia de la primera versión del contrato, escrita en Solidity.
+
 El contrato pasó por varias rondas de revisión antes de la entrega, propias y con herramientas de análisis externas. Cada hallazgo corregido quedó cubierto por un test que corre en cada cambio.
 
 Las medidas de seguridad y cómo avisar de un problema están en [`../../SECURITY.md`](../../SECURITY.md). Qué frena cada ataque: [`MODELO-DE-AMENAZAS.md`](MODELO-DE-AMENAZAS.md).
 
-## Cómo se revisa cada cambio
+## Primera versión: cómo se revisaba cada cambio
 
-- **154 tests automáticos** en cada pull request: 116 del contrato y 38 del oráculo.
+- **Tests automáticos** en cada pull request: 116 del contrato.
 - **Búsqueda de claves privadas** en cada cambio, en la computadora y en el CI.
 - **Web:** revisión de tipos y compilación completa.
 - **Enlaces de la documentación** revisados en cada cambio.

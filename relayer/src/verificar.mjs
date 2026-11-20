@@ -118,7 +118,13 @@ export function verificarReportes(reportes, datos, { chainId, fondo, poligono = 
     }
     const huellaOk = r.dataHash.toLowerCase() === String(reporte.dataHash).toLowerCase();
     // v1: los focos eran los de alta confianza (sin cruce) y no había hora del dato ni polígono en el reporte.
-    const focosOk = (v1 ? r.altaConfianza : r.confirmados) === reporte.hotspots;
+    // Después hubo dos reglas públicas: el cruce entre satélites y, desde las capas de detección, el incendio
+    // más grande que ven los dos. El reporte tiene que coincidir con una, y se informa con cuál.
+    const reglas = v1
+      ? [["alta confianza (v1)", r.altaConfianza]]
+      : [...(r.incendio !== undefined ? [["incendio más grande, por capas", r.incendio]] : []), ["cruce entre satélites (regla anterior)", r.confirmados]];
+    const acierto = reglas.find(([, n]) => n === reporte.hotspots);
+    const focosOk = Boolean(acierto);
     const horaOk = v1 || horaSimulada || r.ultimaDeteccionUtc === reporte.dataTime;
     const poligonoOk = v1 || String(poligono).toLowerCase() === String(reporte.polygonHash).toLowerCase();
     return {
@@ -129,7 +135,8 @@ export function verificarReportes(reportes, datos, { chainId, fondo, poligono = 
       dataHashRecalculado: r.dataHash,
       huellaOk,
       focosCadena: reporte.hotspots,
-      focosRecalculados: v1 ? r.altaConfianza : r.confirmados,
+      focosRecalculados: (acierto ?? reglas[0])[1],
+      regla: (acierto ?? reglas[0])[0],
       focosAltaConfianza: r.altaConfianza,
       focosOk,
       horaCadena: reporte.dataTime,

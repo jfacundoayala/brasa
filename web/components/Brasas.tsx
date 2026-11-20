@@ -54,9 +54,9 @@ export default function Brasas({ cantidad = 70 }: { cantidad?: number }) {
         const a = p.vida * (0.25 + 0.75 * alto) * (0.7 + 0.3 * Math.sin(p.fase * 3));
         const r = p.r * 4;
         const grad = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
-        grad.addColorStop(0, `rgba(255,214,140,${a})`);
-        grad.addColorStop(0.35, `rgba(255,106,43,${a * 0.6})`);
-        grad.addColorStop(1, "rgba(255,60,20,0)");
+        grad.addColorStop(0, `rgba(230,242,255,${a})`);
+        grad.addColorStop(0.35, `rgba(120,180,255,${a * 0.5})`);
+        grad.addColorStop(1, "rgba(80,140,255,0)");
         g.fillStyle = grad;
         g.beginPath();
         g.arc(p.x, p.y, r, 0, Math.PI * 2);

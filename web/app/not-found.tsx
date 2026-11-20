@@ -15,14 +15,14 @@ export default function NoEncontrada() {
         gap: 18,
         padding: 24,
         textAlign: "center",
-        background: "#14110F",
-        color: "#F4EEE8",
+        background: "#f3f7fb",
+        color: "#101c2b",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/simbolo-brasa.svg" alt="brasa" width={72} height={72} />
       <h1 style={{ fontSize: 30, margin: 0 }}>Esta página no existe</h1>
-      <p style={{ margin: 0, maxWidth: 420, color: "#B9ADA3", lineHeight: 1.5 }}>
+      <p style={{ margin: 0, maxWidth: 420, color: "#4a5a6d", lineHeight: 1.5 }}>
         El mapa de incendios, el fondo y cada pago están en la portada.
       </p>
       <a
@@ -31,8 +31,8 @@ export default function NoEncontrada() {
           marginTop: 8,
           padding: "12px 22px",
           borderRadius: 999,
-          background: "#FF5A1F",
-          color: "#14110F",
+          background: "#1b5fae",
+          color: "#fff",
           fontWeight: 700,
           textDecoration: "none",
         }}

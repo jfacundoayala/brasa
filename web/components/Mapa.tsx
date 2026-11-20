@@ -162,7 +162,7 @@ export default function Mapa({ focos, seleccionado, onFoco, onIncendio, onZona, 
           : { type: "Polygon", coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] };
         m.addSource("zona", { type: "geojson", data: zona });
         m.addLayer({ id: "zona-relleno", type: "fill", source: "zona", paint: { "fill-color": "#FF5A1F", "fill-opacity": 0.05 } });
-        m.addLayer({ id: "zona-brillo", type: "line", source: "zona", paint: { "line-color": "#FF6A2B", "line-width": 7, "line-blur": 6, "line-opacity": 0.45 } });
+        m.addLayer({ id: "zona-brillo", type: "line", source: "zona", paint: { "line-color": "#4FA3F7", "line-width": 7, "line-blur": 6, "line-opacity": 0.45 } });
         m.addLayer({ id: "zona-borde", type: "line", source: "zona", paint: { "line-color": "#FFB27A", "line-width": 1.6 } });
         m.on("click", (ev) => {
           if (m.queryRenderedFeatures(ev.point, { layers: ["zona-relleno"] }).length) cb.current.onZona();

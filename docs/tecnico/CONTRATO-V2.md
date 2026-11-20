@@ -1,5 +1,7 @@
 # Contrato v2: qué cambió y por qué
 
+> **Primera versión.** Este documento describe el contrato en Solidity que se usó durante el hackathon. La versión vigente corre en Stellar: ver [`stellar/README.md`](../../stellar/README.md).
+
 > **Desplegado el 12/11/2026** en `0xAABcd03bCfEE730633E1Fd69756E1923Db50c72f` (bloque 60937483), con comisión 5 %, 320 USD/ha, mínimo 2 focos cruzados, sin tope fijo, 12 h entre pagos y altas visibles 10 min antes de cobrar. El v1 (`0x014f…4764`) queda como anterior. El contrato vigente es el v3: ver [`CONTRATO-V3.md`](CONTRATO-V3.md).
 > Origen: una revisión externa del código y lo que encontramos nosotros (ver [`../seguridad/LEEME.md`](../seguridad/LEEME.md)).
 > **Comisión:** el despliegue usa `feeBps = 500`, o sea 5 %: dona 100, llegan 95; si cubre la comisión, paga 105. El ejemplo del comentario en `BrasaFund.sol` usa otro porcentaje; vale `feeBps`. La comisión es `immutable`: cambiarla exige un despliegue nuevo.

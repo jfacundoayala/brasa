@@ -14,11 +14,11 @@ const pct = (...i: number[]) => (i.reduce((s, k) => s + REPARTO_CHILE_2023[k].us
 
 export const metadata: Metadata = {
   title: "Fundamentos · brasa",
-  description: "Cómo funciona brasa por dentro: la fórmula, el fondo en Avalanche, los oráculos, los satélites y las billeteras.",
+  description: "Cómo funciona brasa por dentro: la fórmula, el fondo en Stellar, los oráculos, los satélites y las billeteras.",
   alternates: { canonical: "/fundamentos" },
   openGraph: {
     title: "Fundamentos · brasa",
-    description: "Cómo funciona brasa por dentro: la fórmula, el fondo en Avalanche, los oráculos, los satélites y las billeteras.",
+    description: "Cómo funciona brasa por dentro: la fórmula, el fondo en Stellar, los oráculos, los satélites y las billeteras.",
     url: "/fundamentos",
     // Un openGraph propio reemplaza entero al del layout: la imagen se repite acá.
     images: [{ url: "/og-brasa.png", width: 1200, height: 630, alt: "Fondo brasa para bomberos y damnificados por incendios" }],
@@ -27,29 +27,29 @@ export const metadata: Metadata = {
   },
 };
 
-type Dep = { fund: string; usdc: string; chainId: number; feeBps?: number; federation?: string; recipientDelay?: number };
+type Dep = { fund: string; usdc: string; explorer?: string; feeBps?: number; federation?: string; recipientDelay?: number };
 
 /** Se lee al construir la página: es el mismo archivo que usa la portada. */
 function leerDeploy(): Dep | null {
   try {
-    return JSON.parse(readFileSync(join(process.cwd(), "public", "deployment.fuji.json"), "utf8"));
+    return JSON.parse(readFileSync(join(process.cwd(), "public", "deployment.stellar.json"), "utf8"));
   } catch {
     return null;
   }
 }
 
-const SNOW = "https://build.avax.network/explorer/fuji/c-chain/address/";
+const EXPLORADOR = "https://stellar.expert/explorer/testnet";
 const corto = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 export default function Fundamentos() {
   const d = leerDeploy();
   const fee = d?.feeBps != null ? d.feeBps / 100 : 5;
   return (
-    <>
+    <div className="tema-claro">
       <header className="barra">
         <div className="barra-in">
           <Link href="/" className="barra-logo" aria-label="Volver a brasa">
-            <Logo height={40} />
+            <Logo height={40} claro />
           </Link>
           <nav className="menu" aria-label="Secciones">
             <Link href="/">Inicio</Link>
@@ -74,7 +74,7 @@ export default function Fundamentos() {
         <li><a href="#oraculos">Los oráculos</a></li>
         <li><a href="#satelites">Los satélites</a></li>
         <li><a href="#billeteras">Billeteras y monedas</a></li>
-        <li><a href="#avalanche">¿Por qué Avalanche?</a></li>
+        <li><a href="#stellar">¿Por qué Stellar?</a></li>
         <li><a href="#camino">Lo que sigue</a></li>
       </ul>
 
@@ -192,7 +192,7 @@ export default function Fundamentos() {
 
         <h3>Qué paga hoy el fondo</h3>
         <p>
-          El fondo en Avalanche usa la parte más firme de la fórmula: <b>focos confirmados × 14 ha × {COSTO_HA} USDC</b>. Ejemplo:
+          El fondo en Stellar usa la parte más firme de la fórmula: <b>focos confirmados × 14 ha × {COSTO_HA} USDC</b>. Ejemplo:
           14 focos confirmados = 196 ha → <b>{(196 * COSTO_HA).toLocaleString("es-AR")} USDC</b>. El techo de cada pago es esa meta. Si el fondo tiene menos, se
           envía lo que hay. La fórmula completa (Capa 2) hoy orienta al donante en la tarjeta de cada incendio. Pasarla al fondo
           es parte del roadmap.
@@ -202,7 +202,7 @@ export default function Fundamentos() {
         <ul>
           <li>Sumar más grandes incendios con costo oficial: Canadá 2023, Australia 2019-2020, Portugal 2017, Corrientes 2022.</li>
           <li>Sumar los gastos reales de los cuarteles de Salta, con sus tickets y facturas, para darles más peso que a los de afuera.</li>
-          <li>Que el oráculo firme el resultado de la fórmula completa, para que el fondo pague con ella.</li>
+          <li>Que el oráculo reporte el resultado de la fórmula completa, para que el fondo pague con ella.</li>
         </ul>
       </section>
 
@@ -213,9 +213,9 @@ export default function Fundamentos() {
           para otra cosa.
         </p>
         <ul>
-          <li>Está escrito en <b>Solidity</b> y vive en la red <b>Avalanche</b> (hoy en Fuji).</li>
+          <li>Está escrito en <b>Rust</b> y vive en la red <b>Stellar</b> (hoy en la red de prueba).</li>
           <li><b>No tiene ninguna función para retirar el fondo.</b> Solo paga a cuarteles y damnificados verificados.</li>
-          <li>Hacen falta <b>al menos 2 focos confirmados</b> y pasan <b>12 horas</b> entre un envío y el siguiente en la misma zona.</li>
+          <li>Cada zona fija un <b>mínimo de focos confirmados</b>, un <b>tope por incendio</b> y una <b>espera</b> entre un envío y el siguiente.</li>
           <li>
             Cada alta de un cuartel nuevo queda a la vista{" "}
             {d?.recipientDelay ? `${Math.round(d.recipientDelay / 60)} minutos` : "un tiempo"} antes de poder cobrar (en el piloto
@@ -226,7 +226,7 @@ export default function Fundamentos() {
             se puede subir. Se ve separada antes de donar.
           </li>
           <li>
-            El código está <b>verificado</b>: cualquiera puede leerlo y comprobar que es exactamente el que está publicado.
+            El código es <b>público</b>: cualquiera puede leerlo en el repositorio y correr sus tests.
           </li>
         </ul>
         {d && (
@@ -236,18 +236,18 @@ export default function Fundamentos() {
                 <tr>
                   <th>Fondo</th>
                   <td>
-                    <a href={`https://sourcify.dev/server/repo-ui/43113/${d.fund}`} target="_blank" rel="noreferrer">{corto(d.fund)} · ver el código ↗</a>{" "}
-                    · <a href={`https://repo.sourcify.dev/${d.chainId}/${d.fund}`} target="_blank" rel="noreferrer">Sourcify ↗</a>
+                    <a href={`${d.explorer ?? EXPLORADOR}/contract/${d.fund}`} target="_blank" rel="noreferrer">{corto(d.fund)} · ver en el explorador ↗</a>{" "}
+                    · <a href="/codigo" target="_blank" rel="noreferrer">código ↗</a>
                   </td>
                 </tr>
                 <tr>
                   <th>Moneda</th>
-                  <td><a href={`${SNOW}${d.usdc}`} target="_blank" rel="noreferrer">USDC de Circle {corto(d.usdc)} ↗</a></td>
+                  <td><a href={`${d.explorer ?? EXPLORADOR}/contract/${d.usdc}`} target="_blank" rel="noreferrer">USDC de prueba {corto(d.usdc)} ↗</a> (sin valor, emitido por el equipo para la red de prueba)</td>
                 </tr>
                 {d.federation && (
                   <tr>
                     <th>Quién verifica cuarteles</th>
-                    <td><a href={`${SNOW}${d.federation}`} target="_blank" rel="noreferrer">{corto(d.federation)} ↗</a> (hoy la opera el equipo; el contrato permite traspasarla a la federación)</td>
+                    <td><a href={`${d.explorer ?? EXPLORADOR}/account/${d.federation}`} target="_blank" rel="noreferrer">{corto(d.federation)} ↗</a> (hoy la opera el equipo; el contrato permite traspasarla a la federación)</td>
                   </tr>
                 )}
               </tbody>
@@ -259,20 +259,20 @@ export default function Fundamentos() {
       <section id="oraculos">
         <h2 className="fund-h2"><span className="ico" aria-hidden="true"><IcoOjo /></span>Los oráculos</h2>
         <p className="simple">
-          El fondo no puede mirar el cielo. Un oráculo es quien le lleva el dato de la NASA, firmado. Hacen falta dos firmas
-          distintas.
+          El fondo no puede mirar el cielo. Un oráculo es quien le lleva el dato de la NASA. Hacen falta dos oráculos
+          distintos.
         </p>
         <ul>
-          <li>Dos oráculos firman cada reporte por separado, cada uno con un satélite distinto. Con una sola firma no se paga nada.</li>
-          <li>Las firmas no se pueden reutilizar ni usar en otra red (estándar EIP-712, con un número que no se repite).</li>
+          <li>Dos oráculos reportan por separado, cada uno con un satélite distinto. Con un solo reporte no se paga nada.</li>
+          <li>Cada oráculo es una cuenta de Stellar que autoriza solo su reporte. La red no deja usar dos veces la misma autorización ni llevarla a otra red.</li>
           <li>
             Cada envío guarda una <b>huella</b> de los datos de la NASA. Cualquiera puede bajar esos datos y comprobar que la huella
             coincide.
           </li>
           <li>
-            Cada firma la pone un programa distinto, que baja el dato de la NASA por su cuenta. A cada programa lo opera
-            una persona distinta, con su clave y en su computadora. Ninguna firma puede pagar sola. El contrato
-            ya permite entregar cada firma a un operador externo, de a una y con demora pública, sin mover el fondo. La
+            Cada reporte lo arma un programa distinto, que baja el dato de la NASA por su cuenta. A cada programa lo opera
+            una persona distinta, con su clave y en su computadora. Ningún oráculo puede pagar solo. El contrato
+            ya permite entregar cada oráculo a un operador externo, de a uno y con demora pública, sin mover el fondo. La
             federación de bomberos tiene otra llave, la que acredita cuarteles: comprueba que cada cuartel exista y quién se
             hace cargo. Las llaves quedan separadas.
           </li>
@@ -289,11 +289,16 @@ export default function Fundamentos() {
             </thead>
             <tbody>
               <tr><td>GOES-19 (NOAA)</td><td>Aviso rápido de posible fuego, vía el programa Queimadas del INPE</td><td>Cada 10 minutos</td></tr>
-              <tr><td>NOAA-20 y NOAA-21 (sensor VIIRS)</td><td>Confirman el fuego: tienen que verlo los dos a menos de 2 km</td><td>Cada satélite cubre todo el planeta cada 12 horas; la NASA publica el dato en unas 3 horas (FIRMS)</td></tr>
+              <tr><td>NOAA-20 y NOAA-21 (sensor VIIRS)</td><td>Confirman el fuego: tienen que verlo los dos a menos de 2 km, en dos días distintos</td><td>Cada satélite cubre todo el planeta cada 12 horas; la NASA publica el dato en unas 3 horas (FIRMS)</td></tr>
               <tr><td>MODIS (NASA)</td><td>Dato extra para el mapa</td><td>Todos los días (satélites Terra y Aqua)</td></tr>
             </tbody>
           </table>
         </div>
+        <p>
+          Antes de contar, el oráculo pasa los focos por seis capas: alta confianza, fuera de fuentes fijas (chimeneas, ingenios),
+          fuera de cultivos, agrupados en un incendio, vistos por los dos satélites y en dos días distintos. Con los focos de Salta
+          de 2012 a 2025, esas capas bajan los días con pago posible de 1.088 a 110.
+        </p>
         <p>
           Los niveles 1, 2 y 3 se calculan con la cantidad de focos de cada incendio.
         </p>
@@ -308,12 +313,12 @@ export default function Fundamentos() {
             cuartel o el damnificado sabe exacto cuánto recibe.
           </li>
           <li>
-            <b>AVAX</b> es la moneda propia de Avalanche. Si tenés AVAX, lo cambiás a USDC desde tu billetera (Core o LFJ) y después
-            donás. Tu AVAX nunca pasa por brasa.
+            <b>XLM</b> es la moneda propia de Stellar. Se usa para pagar la comisión de la red, que es una fracción de centavo
+            por operación.
           </li>
           <li>
-            <b>Core</b> es la billetera de Avalanche. También sirve MetaMask. Donar son dos firmas: una para autorizar el USDC y otra
-            para enviarlo.
+            Sirve cualquier <b>billetera de Stellar</b>, como Varial, xBull o Lobstr. Donar es una sola firma. Antes hay que
+            habilitar USDC en la cuenta: en Stellar cada cuenta elige qué monedas acepta.
           </li>
           <li>
             Cada cuartel o damnificado recibe en su billetera y paga a proveedores o pasa a pesos con un proveedor registrado en la CNV.
@@ -321,23 +326,25 @@ export default function Fundamentos() {
         </ul>
       </section>
 
-      <section id="avalanche">
-        <h2 className="fund-h2"><span className="ico" aria-hidden="true"><IcoVerificado /></span>¿Por qué Avalanche?</h2>
-        <p className="simple">Porque el pago queda firme en un segundo, cuesta centavos y tiene USDC nativo, el dólar digital de Circle.</p>
+      <section id="stellar">
+        <h2 className="fund-h2"><span className="ico" aria-hidden="true"><IcoVerificado /></span>¿Por qué Stellar?</h2>
+        <p className="simple">Porque es una red hecha para pagos: el dinero queda firme en segundos, cuesta una fracción de centavo y tiene USDC, el dólar digital de Circle.</p>
         <ul>
-          <li><b>Rápido:</b> una operación queda firme en cerca de 1 segundo en la C-Chain, la cadena de los contratos.</li>
-          <li><b>Barato:</b> enviar una donación cuesta centavos de dólar, así casi todo llega a bomberos y damnificados.</li>
-          <li><b>USDC nativo de Circle</b> y oráculos ya integrados (Chainlink, Pyth y otros) para crecer.</li>
+          <li><b>Rápido:</b> una operación queda firme en unos 5 segundos.</li>
+          <li><b>Barato:</b> enviar una donación cuesta una fracción de centavo, así casi todo llega a bomberos y damnificados.</li>
+          <li><b>USDC de Circle</b> en la red principal, la misma moneda en todos los países.</li>
           <li>
-            <b>Una red propia a futuro:</b> Avalanche permite crear una cadena propia (L1), por ejemplo una de federaciones de
-            bomberos que decidan quién valida, sin salir del ecosistema.
+            <b>Fácil para el cuartel:</b> cobra en una cuenta común de Stellar. Solo tiene que habilitar USDC.
+          </li>
+          <li>
+            <b>Una sola firma para donar:</b> el donante aprueba el envío una vez, desde su billetera.
           </li>
           <li>
             <b>Todo a la vista:</b> cada donación y cada envío se ve en el explorador público, para siempre.
           </li>
         </ul>
         <p className="mini">
-          Fuente: Avalanche Builder Hub (build.avax.network), consultado el 12/11/2026.
+          Fuente: documentación de Stellar (developers.stellar.org), consultada el 19/11/2026.
         </p>
       </section>
 
@@ -345,10 +352,10 @@ export default function Fundamentos() {
         <h2 className="fund-h2"><span className="ico" aria-hidden="true"><IcoVerificado /></span>Camino a la red principal</h2>
         <p className="simple">Lo que ya funciona hoy, y el paso que sigue en cada frente.</p>
         <ul>
-          <li><b>Red:</b> hoy corre en Avalanche Fuji, la red de prueba, con código público y verificable. Sigue la auditoría externa y la red principal.</li>
-          <li><b>Firmas:</b> hoy las tienen dos personas distintas del equipo. Sigue entregar una a la federación de bomberos y otra a un operador de datos.</li>
+          <li><b>Red:</b> hoy corre en la red de prueba de Stellar, con código público. Sigue la auditoría externa y la red principal.</li>
+          <li><b>Oráculos:</b> hoy los operan dos personas distintas del equipo. Sigue entregar uno a la federación de bomberos y otro a un operador de datos.</li>
           <li><b>Datos:</b> hoy confirman dos satélites de la NASA. Sigue sumar un segundo proveedor.</li>
-          <li><b>Filtros:</b> hoy cuentan la alta confianza, los dos satélites y el cuartel asignado. Sigue el mapa de uso del suelo y el registro de quemas autorizadas.</li>
+          <li><b>Filtros:</b> hoy cuentan seis capas de detección y el cuartel asignado. Sigue el control con imágenes de 10 m y el registro de quemas autorizadas.</li>
           <li><b>Pagos:</b> hoy el contrato paga directo al cuartel. Sigue el pago por tramos, con comprobantes.</li>
         </ul>
       </section>
@@ -359,6 +366,6 @@ export default function Fundamentos() {
         </p>
       </footer>
     </main>
-    </>
+    </div>
   );
 }

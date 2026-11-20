@@ -26,22 +26,24 @@ La plataforma brasa es **la vecina que organiza la colecta y lleva la planilla a
 
 | Archivo | Uso |
 |---|---|
-| [`logo-brasa.svg`](logo-brasa.svg) | Logo completo con nombre, sobre fondo claro |
-| [`logo-brasa-oscuro.svg`](logo-brasa-oscuro.svg) | Logo completo con nombre, sobre fondo oscuro. Es el que usa la web |
+| [`logo-brasa.svg`](logo-brasa.svg) | Logo completo con nombre, sobre fondo claro. Es el que usa la web |
+| [`logo-brasa-oscuro.svg`](logo-brasa-oscuro.svg) | Logo completo con nombre, sobre fondo oscuro |
 | [`simbolo-brasa.svg`](simbolo-brasa.svg) | Ícono cuadrado para la app, el favicon y las redes |
 
 ## 5. Colores
+La web, el deck y el resumen usan tonos claros con azul y verde: transmiten confianza y cuidado. El naranja queda para el logo y para los incendios en el mapa, que son el dato.
+
 | Nombre | Hex | Uso |
 |---|---|---|
-| Carbón | `#14110F` | Fondo de la página |
-| Noche | `#04060C` | Fondo de la portada, detrás de la Tierra |
-| Brasa | `#FF6A2B` | Color principal, botones y acentos. La llama del logo usa `#FF5A1F` |
-| Ámbar | `#FFB000` | Avisos. En el logo, la llama interior y el satélite |
-| Ceniza | `#FBF6EE` | Texto sobre fondo oscuro y fondos claros |
-| Hielo | `#7CC4FF` | El segundo satélite en la portada |
-| Verde | `#2E9E6B` | Solo para lo confirmado y lo verificado |
+| Papel | `#F3F7FB` | Fondo de la página |
+| Tinta | `#101C2B` | Texto y bloques oscuros, como la ventana al espacio de la portada |
+| Azul | `#1B5FAE` | Botones, enlaces y cifras |
+| Celeste | `#8EC5FF` | Acentos sobre fondo oscuro |
+| Verde | `#1F7A54` | Solo para lo confirmado y lo verificado |
+| Línea | `#D5E0EC` | Bordes de tarjetas |
+| Llama | `#FF5A1F` · `#FFB000` · `#FFE08A` | Solo en el logo. Los incendios del mapa van de amarillo a rojo según el nivel |
 
-Que el verde sea solo para cosas confirmadas ayuda a que la gente lo asocie con confianza.
+Que el verde sea solo para cosas confirmadas ayuda a que la gente lo asocie con confianza. Los tonos de la web están como variables en `web/app/globals.css`.
 
 ## 6. Tipografía
 - **Logo y títulos:** Space Grotesk, en negrita.
@@ -50,7 +52,7 @@ Que el verde sea solo para cosas confirmadas ayuda a que la gente lo asocie con 
 - Las tres se sirven desde el propio sitio.
 
 ## 7. Cómo se ve la web
-- Fondo Carbón, con tarjetas apenas más claras.
-- **Portada** con la Tierra en 3D y los satélites NOAA-20 y NOAA-21 en órbita.
+- Fondo Papel, con tarjetas blancas.
+- **Portada** oscura, como una ventana al espacio, con la Tierra en 3D y los satélites NOAA-20 y NOAA-21 en órbita.
 - **Mapa satelital de Salta** con una llama por incendio: una, dos o tres según el nivel (leve, medio o grave).
 - Cada incendio lleva su sello: *confirmado por dos satélites* (verde) o *lo ve un solo satélite*.

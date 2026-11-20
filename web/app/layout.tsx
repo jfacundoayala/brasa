@@ -15,14 +15,14 @@ export const metadata: Metadata = {
   ),
   openGraph: {
     title: "Ayuda a tiempo, recursos a la vista · brasa",
-    description: "Cuando dos satélites de la NASA confirman un incendio, el fondo paga a los bomberos y a los damnificados. Piloto en Salta, en Avalanche Fuji.",
+    description: "Cuando dos satélites de la NASA confirman un incendio, el fondo paga a los bomberos y a los damnificados. Piloto en Salta, en la red de prueba de Stellar.",
     images: [{ url: "/og-brasa.png", width: 1200, height: 630, alt: "Fondo brasa para bomberos y damnificados por incendios" }],
     locale: "es_AR",
     type: "website",
   },
   twitter: { card: "summary_large_image", images: ["/og-brasa.png"] },
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#14110F" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f3f7fb" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

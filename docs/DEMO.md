@@ -1,6 +1,6 @@
 # Demo guiada y preguntas difíciles
 
-Para recorrer brasa en 3 minutos y comprobar cada cosa que se muestra. Corre en Avalanche Fuji, la red de prueba, con USDC de prueba y datos reales de la NASA.
+Para recorrer brasa en 3 minutos y comprobar cada cosa que se muestra. Corre en la red de prueba de Stellar, con USDC de prueba y datos reales de la NASA.
 
 ## Recorrido (3 minutos)
 
@@ -10,34 +10,32 @@ Para recorrer brasa en 3 minutos y comprobar cada cosa que se muestra. Corre en 
 | 0:25–0:50 | Las cuatro herramientas | Detecta, calcula, envía y deja todo trazable | [`README.md`](../README.md#cómo-funciona) |
 | 0:50–1:20 | Mapa | Los focos del día que confirmaron los dos satélites (VIIRS NOAA-20 y NOAA-21) | NASA FIRMS, misma fecha y zona |
 | 1:20–1:40 | Un incendio | La meta: `focos × 14 ha × 400 USD`, con la fuente de cada número | [`FORMULA-BRASA.md`](producto/FORMULA-BRASA.md) |
-| 1:40–2:00 | Donar | Una donación de 0,01 USDC en Fuji, con la comisión visible antes de confirmar | [Transacción de 0,01 USDC](https://build.avax.network/explorer/fuji/c-chain/tx/0x841e41303da62b7e79fcdf7708f7814f959317793fea60efca9b4a80785ac39c) |
-| 2:00–2:30 | Explorador | El pago en vivo del 12/11: 9,5 USDC a dos cuarteles y a damnificados | [Comprobante](https://build.avax.network/explorer/fuji/c-chain/tx/0xd35e6748a10d21081a05998893f4b3d8d2f42d2d89d438bcd22944d7edded4a3) |
-| 2:30–3:00 | Terminal | `verificar-hash` recalcula la huella de los datos de la NASA y dice COINCIDE | [`VERIFICAR-HUELLA.md`](tecnico/VERIFICAR-HUELLA.md) |
+| 1:40–2:00 | Donar | Una donación en la red de prueba, con una sola firma y la comisión visible antes de confirmar | [El contrato en el explorador](https://stellar.expert/explorer/testnet/contract/CAE23TYOONXIZEHOYY4GZARITWVOFQBENRWHK7MCFM4Q7NRUJSVGVQR6) |
+| 2:00–2:30 | Explorador | El pago de punta a punta del 19/11: 280 USDC al cuartel y a la asistencia | [Comprobante](https://stellar.expert/explorer/testnet/tx/9789094c217e84c3aeb28836751057e77f98bc36a7056af1fd72b3fc445dd532) |
+| 2:30–3:00 | Terminal | El oráculo baja los focos del día y muestra el conteo capa por capa, sin enviar nada | [`README.md`](../README.md#seis-capas-para-no-pagar-un-fuego-falso) |
 
 ```bash
 cd relayer && npm ci
-node src/index.mjs verificar-hash \
-  --tx 0xd35e6748a10d21081a05998893f4b3d8d2f42d2d89d438bcd22944d7edded4a3 \
-  --datos sample-data/en-vivo-2026-11-12
+node src/index.mjs reportar-stellar --publico --simular
 ```
 
-**Si falla la red:** el video ([youtu.be/Kv2nUGe9D3A](https://youtu.be/Kv2nUGe9D3A)) muestra el mismo recorrido con el diseño anterior, y `verificar-hash` funciona con los datos guardados en el repo.
+**Si falla la red:** el video ([youtu.be/Kv2nUGe9D3A](https://youtu.be/Kv2nUGe9D3A)) muestra el recorrido con la primera versión, y los tests del oráculo corren con los datos guardados en el repo.
 
 ## Preguntas difíciles
 
 **¿Por qué no una base de datos común?**
-Quien administra una base de datos puede cambiar la regla o mover el dinero, y el donante tiene que creerle. En brasa, la regla está en un contrato verificado que no tiene función de retiro, tampoco para el equipo. Cada movimiento es público.
-*Prueba:* `contracts/contracts/BrasaFund.sol` y el test "la federación no tiene ninguna función para mover el fondo".
+Quien administra una base de datos puede cambiar la regla o mover el dinero, y el donante tiene que creerle. En brasa, la regla está en un contrato público que no tiene función de retiro, tampoco para el equipo. Cada movimiento es público.
+*Prueba:* [`stellar/contracts/brasa-fund/src/lib.rs`](../stellar/contracts/brasa-fund/src/lib.rs): el dinero sale solo por `report_fire`, hacia destinatarios acreditados.
 
-**Las firmas las opera el equipo: ¿no pueden mentir?**
-Cada pago necesita dos firmas, una por satélite, en dos computadoras distintas. Además hay un mínimo de focos cruzados, la meta funciona como techo y pasan 12 horas entre pagos. Cada pago guarda la huella del dato de la NASA, así que un dato falso se puede detectar después. El paso siguiente es una firma para la federación de bomberos y otra para un operador externo. El contrato ya permite rotarlas sin mover el fondo.
-*Prueba:* [`CONTRATO-V3.md`](tecnico/CONTRATO-V3.md).
+**Los oráculos los opera el equipo: ¿no pueden mentir?**
+Cada pago necesita dos reportes, uno por satélite, autorizados por dos cuentas distintas. Además hay un mínimo de focos, la meta funciona como techo y hay una espera entre pagos. Cada pago guarda la huella del dato de la NASA, así que un dato falso se puede detectar después. El paso siguiente es un oráculo para la federación de bomberos y otro para un operador externo. El contrato ya permite rotarlos sin mover el fondo.
+*Prueba:* [`stellar/README.md`](../stellar/README.md).
 
 **La NASA publica el dato con unas 3 horas de demora: ¿qué se gana?**
 No se ganan esas 3 horas. Se ganan los días que tarda hoy una colecta en llegar al cuartel. Desde que el dato llega al contrato, el pago sale en segundos.
 
 **¿Y si es una quema agrícola y no un incendio?**
-Un foco solo no paga. Hace falta alta confianza, que los dos satélites vean el fuego a menos de 2 km, un mínimo de focos y que la federación haya asignado un cuartel a ese incendio. Sin un cuartel asignado, el contrato no libera nada.
+Un foco solo no paga. Antes de contar, pasa por seis capas: alta confianza, fuera de fuentes fijas, fuera de cultivos, en un grupo de focos a menos de 2 km, visto por los dos satélites y en dos días distintos. Además hace falta un mínimo de focos y que la federación haya asignado un cuartel a ese incendio. Sin un cuartel asignado, el contrato no libera nada.
 *Prueba:* [`FOCOS-QUE-NO-SON-INCENDIOS.md`](producto/FOCOS-QUE-NO-SON-INCENDIOS.md).
 
 **¿De dónde salen los 400 USD por hectárea?**
@@ -55,5 +53,5 @@ No. La plataforma no cambia, no custodia ni transfiere el dinero de nadie: el do
 *Prueba:* [`POSICION-PSAV-Y-FONDOS.md`](legal/POSICION-PSAV-Y-FONDOS.md).
 
 **¿Sirve solo para Salta?**
-No. Salta es el piloto. NASA FIRMS cubre todo el planeta, y sumar una zona es una llamada más al contrato (`createZone`), con sus reglas y sus cuarteles.
+No. Salta es el piloto. NASA FIRMS cubre todo el planeta, y sumar una zona es una llamada más al contrato (`create_zone`), con sus reglas y sus cuarteles.
 *Prueba:* [`roadmap.md`](producto/roadmap.md).

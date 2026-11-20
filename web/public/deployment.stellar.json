@@ -1,0 +1,19 @@
+{
+  "network": "stellar-testnet",
+  "chainId": -1,
+  "passphrase": "Test SDF Network ; September 2015",
+  "rpc": "https://soroban-testnet.stellar.org",
+  "explorer": "https://stellar.expert/explorer/testnet",
+  "fund": "CAE23TYOONXIZEHOYY4GZARITWVOFQBENRWHK7MCFM4Q7NRUJSVGVQR6",
+  "usdc": "CAHM3B3MQMPOQLD6IC4UH77AGEVSXQEQCHHGM3SL2J2DJXCEFIRTESO3",
+  "zoneId": "c48e22d109fbdc9ea9d09115591b16133717abf8f0faad86b3656f23f0a8de5b",
+  "zoneName": "Salta",
+  "feeBps": 500,
+  "version": 3,
+  "polygonHash": "f75308a1b854e187072425bcc0c8017bd053462a134b4d16da2fcdd569e27888",
+  "federation": "GCBB27NIZY2M2VRMKFJIGFBHWYQMQ73BVKIQ2VOPKDLVAU36VLE337GL",
+  "recipientDelay": 3600,
+  "oracleDelay": 3600,
+  "minDonation": 1,
+  "costPerHa": 4
+}

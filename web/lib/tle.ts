@@ -22,24 +22,69 @@ export async function leerTles(): Promise<Tle[]> {
   return guardados.filter((t) => tleOk(t.norad, t.line1, t.line2));
 }
 
+const GUARDA = "brasa-tle";
+/** Las órbitas se publican pocas veces por día: se piden una vez y se guardan en el navegador. */
+const VIGENCIA_MS = 6 * 3600 * 1000;
+type Par = [string, string];
+
+async function pedir(url: string): Promise<Response | null> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal });
+    return r.ok ? r : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** El TLE del día de un satélite: primero CelesTrak (la fuente de NORAD) y, si no responde, el servicio de respaldo. */
+async function delDia(norad: number): Promise<Par | null> {
+  const a = await pedir(`https://celestrak.org/NORAD/elements/gp.php?CATNR=${norad}&FORMAT=TLE`);
+  if (a) {
+    const lineas = (await a.text().catch(() => "")).split("\n").map((l) => l.trim());
+    const l1 = lineas.find((l) => l.startsWith("1 "));
+    const l2 = lineas.find((l) => l.startsWith("2 "));
+    if (tleOk(norad, l1, l2)) return [l1 as string, l2 as string];
+  }
+  const b = await pedir(`https://tle.ivanstanojevic.me/api/tle/${norad}`);
+  const j = b ? await b.json().catch(() => null) : null;
+  return tleOk(norad, j?.line1, j?.line2) ? [j.line1, j.line2] : null;
+}
+
+function leerGuarda(): Record<string, Par> | null {
+  try {
+    const g = JSON.parse(localStorage.getItem(GUARDA) ?? "null") as { t: number; pares: Record<string, Par> } | null;
+    return g && Date.now() - g.t < VIGENCIA_MS ? g.pares : null;
+  } catch {
+    return null;
+  }
+}
+
 /** TLE del día. Devuelve null si no llegó ninguno válido y distinto del guardado. */
 export async function refrescarTles(guardados: Tle[]): Promise<Tle[] | null> {
-  let cambio = false;
-  const frescos = await Promise.all(
-    guardados.map(async (t) => {
+  let pares = leerGuarda();
+  if (!pares) {
+    pares = {};
+    for (const [i, par] of (await Promise.all(guardados.map((t) => delDia(t.norad)))).entries()) {
+      if (par) pares[guardados[i].norad] = par;
+    }
+    if (Object.keys(pares).length === guardados.length) {
       try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 4000);
-        const r = await fetch(`https://tle.ivanstanojevic.me/api/tle/${t.norad}`, { signal: ctrl.signal });
-        const j = r.ok ? await r.json() : null;
-        clearTimeout(timer);
-        if (!tleOk(t.norad, j?.line1, j?.line2) || (j.line1 === t.line1 && j.line2 === t.line2)) return t;
-        cambio = true;
-        return { ...t, line1: j.line1 as string, line2: j.line2 as string };
+        localStorage.setItem(GUARDA, JSON.stringify({ t: Date.now(), pares }));
       } catch {
-        return t;
+        // sin lugar para guardar: se vuelve a pedir en la próxima visita
       }
-    }),
-  );
+    }
+  }
+  let cambio = false;
+  const frescos = guardados.map((t) => {
+    const par = pares[t.norad];
+    if (!par || !tleOk(t.norad, par[0], par[1]) || (par[0] === t.line1 && par[1] === t.line2)) return t;
+    cambio = true;
+    return { ...t, line1: par[0], line2: par[1] };
+  });
   return cambio ? frescos : null;
 }

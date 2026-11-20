@@ -1,6 +1,6 @@
 // Logo de brasa: el mismo dibujo que docs/identidad/logo-brasa-oscuro.svg (llama en tres tonos, por los tres niveles de incendio, con el satélite que la detecta y "brasa" escrito).
 // Va en línea (no como <img>) para que el texto use Space Grotesk, la letra que carga la página.
-export default function Logo({ height = 48 }: { height?: number }) {
+export default function Logo({ height = 48, claro = false }: { height?: number; claro?: boolean }) {
   return (
     <svg viewBox="0 0 420 120" height={height} role="img" aria-label="brasa">
       <g transform="translate(10,8) scale(1.04)">
@@ -14,7 +14,7 @@ export default function Logo({ height = 48 }: { height?: number }) {
         fontFamily="'Space Grotesk Variable','Space Grotesk','Inter','Segoe UI',Arial,sans-serif"
         fontSize="68"
         fontWeight="700"
-        fill="#FBF6EE"
+        fill={claro ? "#101C2B" : "#FBF6EE"}
         letterSpacing="-2"
       >
         brasa
