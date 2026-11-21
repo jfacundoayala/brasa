@@ -300,6 +300,11 @@ export default function Fundamentos() {
           de 2012 a 2025, esas capas bajan los días con pago posible de 1.088 a 110.
         </p>
         <p>
+          Esa regla tiene un límite que elegimos a propósito: si a uno de los dos satélites le falta una pasada, la confirmación
+          espera a la siguiente y el pago sale más tarde. Pasó el 5 de noviembre de 2026, cuando al NOAA-20 le faltaron las pasadas
+          de la tarde sobre Sudamérica. El fondo prefiere pagar más tarde antes que pagar por un fuego que vio un solo satélite.
+        </p>
+        <p>
           Los niveles 1, 2 y 3 se calculan con la cantidad de focos de cada incendio.
         </p>
       </section>
